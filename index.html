@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>INSIDE THE BLACK BOX // Simondon's Politics of Technology</title>
+  <meta name="description" content="A dynamic glitch presentation on Simondon's politics of technology, after Henning Schmidgen — from chaos to rationalization." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=VT323&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles/main.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23070710'/%3E%3Crect x='8' y='8' width='16' height='16' fill='%23000' stroke='%2300fff0'/%3E%3C/svg%3E" />
+</head>
+<body data-step="0" data-act="1" style="--clean:0;">
+
+  <!-- ===== GLOBAL FX OVERLAYS ===== -->
+  <div class="fx fx-grain" aria-hidden="true"></div>
+  <div class="fx fx-scanlines" aria-hidden="true"></div>
+  <div class="fx fx-rgb" aria-hidden="true"></div>
+  <div class="fx fx-vignette" aria-hidden="true"></div>
+  <div class="fx fx-glitchburst" aria-hidden="true"></div>
+
+  <!-- ===== CUSTOM GLITCH CURSOR ===== -->
+  <div id="cursor" class="cursor" aria-hidden="true">
+    <span class="cur cur-c"></span>
+    <span class="cur cur-m"></span>
+    <span class="cur cur-y"></span>
+    <span class="cur-tag" id="cursorTag">RATIONALIZE</span>
+  </div>
+
+  <!-- ===== HUD ===== -->
+  <header class="hud">
+    <div class="hud-title glitch" data-text="INSIDE_THE_BLACK_BOX">INSIDE_THE_BLACK_BOX</div>
+    <div class="hud-meta">
+      <span class="hud-chip" id="actLabel">ACT 1 / 4 · THE BOX</span>
+      <span class="hud-chip hud-chip-alt" id="folderLabel">SYS://READY</span>
+    </div>
+  </header>
+
+  <!-- ===== STAGE ===== -->
+  <main id="stage" class="stage">
+
+    <!-- ACT 1 — THE BLACK BOX -->
+    <section id="act-intro" class="act act-intro is-active">
+      <div class="intro-grid">
+        <div class="intro-box">
+          <div class="boxthing glitch" data-text="?">
+            <span class="boxthing-face"></span>
+            <span class="boxthing-q">?</span>
+          </div>
+          <div class="intro-marquee"><span>OPACITY&nbsp;//&nbsp;ALIENATION&nbsp;//&nbsp;AUTOMATION&nbsp;//&nbsp;CLOSURE&nbsp;//&nbsp;SLICK&nbsp;//&nbsp;MUTE&nbsp;//&nbsp;OPACITY&nbsp;//&nbsp;ALIENATION&nbsp;//&nbsp;AUTOMATION&nbsp;//&nbsp;CLOSURE&nbsp;//&nbsp;SLICK&nbsp;//&nbsp;MUTE&nbsp;//&nbsp;</span></div>
+        </div>
+        <div class="intro-copy">
+          <p class="eyebrow">A THEORY TRANSMISSION · IAAC</p>
+          <h1 class="display glitch" data-text="INSIDE THE BLACK BOX">INSIDE THE&nbsp;BLACK&nbsp;BOX</h1>
+          <p class="subhead">Gilbert Simondon's <em>politics of technology</em> — after Henning Schmidgen.</p>
+          <blockquote class="pullquote">
+            &ldquo;First a gothic cathedral, <span class="hl">then a kitchen.</span>&rdquo;
+            <cite>— Roland Barthes, on the Citroën D.S.</cite>
+          </blockquote>
+          <p class="leadin">We admire the surface. We never open it. <br/>The machine arrives sealed, smooth, <span class="redact">mute</span>. Tonight we open it.</p>
+          <button id="openBtn" class="btn btn-big" data-text="OPEN THE BOX">OPEN THE BOX <span class="btn-arrow">▸</span></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ACT 2/3 — THE MESSY CANVAS + RATIONALIZATION -->
+    <section id="act-canvas" class="act act-canvas">
+      <div id="world" class="world" aria-label="The messy canvas of raw material"></div>
+
+      <div id="folderTitle" class="folder-title" aria-hidden="true">
+        <span class="ft-idx">01</span>
+        <span class="ft-name">INTRO</span>
+      </div>
+
+      <div id="loadState" class="load-state">LOADING THE INSIDE OF THE BOX<span class="blink">_</span></div>
+
+      <!-- Rationalization payoff -->
+      <div id="rationalize" class="rationalize" aria-hidden="true">
+        <div class="rat-inner">
+          <p class="rat-kicker">ORDER WHERE THERE WAS CHAOS</p>
+          <p class="rat-line">Our job is not to work with scrambled information.</p>
+          <p class="rat-line rat-dim">The black box already does that.</p>
+          <p class="rat-line rat-big">What matters is how <span class="hl">we</span> rationalize it.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ACT 4 — THE RATIONALIZER (chatbot popup) -->
+    <div id="chatModal" class="chat-modal" aria-hidden="true">
+      <div class="win chat-win" role="dialog" aria-label="Ask the Black Box">
+        <div class="winbar winbar-chat">
+          <span class="wb-dot"></span>
+          <span class="wb-title">THE_RATIONALIZER.EXE — ASK THE BLACK BOX</span>
+          <span class="wb-btns"><i>_</i><i>▢</i><i class="wb-x" id="chatClose">✕</i></span>
+        </div>
+        <div class="chat-body">
+          <p class="chat-prompt">
+            The human took on the task of rationalizing the data.<br/>
+            Now it is the <span class="hl-m">AI's</span> turn to answer — and <span class="hl-y">your</span> turn to think.
+          </p>
+          <div id="chatLog" class="chat-log"></div>
+          <div class="chat-suggest" id="chatSuggest"></div>
+          <form id="chatForm" class="chat-form" autocomplete="off">
+            <span class="chat-prefix">you@blackbox:~$</span>
+            <input id="chatInput" class="chat-input" type="text" placeholder="ask anything you saw…" maxlength="400" />
+            <button class="btn chat-send" type="submit">SEND ▸</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ===== NAV ===== -->
+  <nav class="nav">
+    <button id="prevBtn" class="btn btn-nav" disabled>◂ BACK</button>
+    <div id="progress" class="progress" aria-hidden="true"></div>
+    <button id="nextBtn" class="btn btn-nav btn-next" data-text="NEXT">NEXT ▸</button>
+  </nav>
+
+  <!-- Optional offline snapshot fallback (generated by `npm run snapshot`). -->
+  <script src="slides-data.js" onerror="window.__noSnapshot=true"></script>
+  <script src="scripts/glitch.js" defer></script>
+  <script src="scripts/canvas.js" defer></script>
+  <script src="scripts/chatbot.js" defer></script>
+  <script src="scripts/state.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 560" font-family="Arial Black, Arial, sans-serif">
+  <rect width="560" height="560" fill="#07070d"/>
+  <circle cx="280" cy="280" r="210" fill="none" stroke="#2b3bff" stroke-width="2"/>
+  <circle cx="280" cy="280" r="170" fill="none" stroke="#11112a" stroke-width="40"/>
+  <path d="M280 280 L280 90 A190 190 0 0 1 444 188 Z" fill="#ff00a8" opacity="0.25"/>
+  <g stroke="#00fff0" stroke-width="3">
+    <line x1="280" y1="280" x2="410" y2="170"/>
+  </g>
+  <circle cx="280" cy="280" r="16" fill="#f5ff00"/>
+  <text x="280" y="300" fill="#07070d" font-size="20" text-anchor="middle">+/-</text>
+  <text x="280" y="500" fill="#e8e8f0" font-size="30" text-anchor="middle" letter-spacing="2">MARGIN OF</text>
+  <text x="280" y="535" fill="#f5ff00" font-size="30" text-anchor="middle" letter-spacing="2">INDETERMINATION</text>
+  <text x="280" y="60" fill="#ff2b2b" font-size="16" text-anchor="middle" letter-spacing="6">OPEN MACHINE</text>
+</svg>

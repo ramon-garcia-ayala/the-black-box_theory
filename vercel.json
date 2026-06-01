@@ -1,0 +1,16 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "functions": {
+    "api/*.mjs": {
+      "includeFiles": "Slides_Datasets/**"
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/slides",
+      "headers": [{ "key": "Cache-Control", "value": "no-store, max-age=0" }]
+    }
+  ]
+}

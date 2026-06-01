@@ -1,0 +1,13 @@
+{
+  "name": "the-black-box",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Inside the Black Box — a dynamic one-page glitch presentation on Simondon's politics of technology.",
+  "scripts": {
+    "snapshot": "node tools/build-slides.mjs"
+  },
+  "dependencies": {
+    "ai": "^5.0.0"
+  }
+}
