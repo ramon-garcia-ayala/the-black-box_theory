@@ -81,19 +81,32 @@ into the functions (`includeFiles`) so the live scan works in production.
 
 ```bash
 npm install
-npm run dev          # vercel dev — serves the page + /api functions
 ```
 
-Open offline without a server (double-click `index.html`)? Generate the snapshot first
-so the canvas has data and image paths resolve via a server:
+**Option A — quick visual preview (no Vercel login):**
 
 ```bash
-npm run snapshot     # writes slides-data.js (window.SLIDES) as a fallback
+npm run snapshot     # writes slides-data.js (window.SLIDES) from your folders
+npm run preview      # static server at http://localhost:5050
 ```
 
-> Note: opening via `file://` will show **broken image tiles** because asset paths are
-> root-absolute (`/Slides_Datasets/...`). Use `vercel dev` or any static server for a
-> faithful preview. Text cards, layout, glitch and cursor all work regardless.
+Static-only: `/api/*` is not served, so the canvas reads the `slides-data.js` snapshot
+and the chatbot shows its offline fallback. Re-run `npm run snapshot` after changing
+content.
+
+**Option B — full local with live `/api` + AI chat:**
+
+```bash
+npm i -g vercel      # if needed
+vercel dev           # run vercel dev DIRECTLY
+```
+
+> There is intentionally **no `npm run dev` script**. Vercel resolves its dev command to
+> `npm run dev`; if that script ran `vercel dev` it would recurse ("must not recursively
+> invoke itself"). So run `vercel dev` directly.
+>
+> Avoid opening `index.html` via `file://` — asset paths are root-absolute
+> (`/Slides_Datasets/...`) and would 404. Always use a server (`npm run preview` or `vercel dev`).
 
 ---
 

@@ -10,10 +10,18 @@ order** across four acts and ends with an AI chatbot — the *rationalizer*.
 
 ```bash
 npm install
-npm run dev      # vercel dev (page + /api functions)
+
+# Option A — quick visual preview, no login (static; chatbot shows offline fallback)
+npm run snapshot      # refresh slides-data.js from your folders
+npm run preview       # http://localhost:5050
+
+# Option B — full local with live /api + AI chat
+npm i -g vercel       # if needed
+vercel dev            # run vercel dev DIRECTLY (not via `npm run dev`)
 ```
 
-No Vercel CLI yet? `npm i -g vercel`, then `vercel login`.
+> Run `vercel dev` directly — there is intentionally no `npm run dev` script, because
+> Vercel resolves its dev command to `npm run dev` and that would recurse into itself.
 
 ## Add your own content (no rebuild)
 

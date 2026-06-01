@@ -5,6 +5,7 @@
   "type": "module",
   "description": "Inside the Black Box — a dynamic one-page glitch presentation on Simondon's politics of technology.",
   "scripts": {
+    "preview": "node tools/serve.mjs",
     "snapshot": "node tools/build-slides.mjs"
   },
   "dependencies": {
