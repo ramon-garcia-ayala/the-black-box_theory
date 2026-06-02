@@ -668,6 +668,7 @@ body[data-step="0"] .fx-scanlines { display: none !important; }
 .msg-bot { align-self: flex-start; background: var(--paper); color: var(--ink); box-shadow: inset 0 0 0 1px var(--blue); }
 .msg-bot .caret { animation: blink 1s steps(1) infinite; color: var(--blue); }
 .chat-suggest { display: flex; flex-wrap: wrap; gap: 6px; }
+.chat-limit { font: 700 11px/1.4 var(--font-cond); letter-spacing: .5px; text-transform: uppercase; color: var(--blue); background: var(--paper); padding: 8px 10px; box-shadow: inset 0 0 0 1px var(--blue); }
 .sugg { font: 700 10px/1 var(--font-cond); letter-spacing: .5px; text-transform: uppercase; color: var(--ink); background: var(--paper); padding: 7px 9px; cursor: none; box-shadow: inset 0 0 0 1px var(--hair); }
 .sugg:hover { color: #fff; background: var(--blue); box-shadow: inset 0 0 0 1px var(--blue); }
 .chat-form { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--hair); padding-top: 12px; }

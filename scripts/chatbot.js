@@ -7,6 +7,23 @@
   const suggest = document.getElementById('chatSuggest');
   const messages = [];
 
+  // Max questions per session — resets on page refresh (in-memory counter, by design).
+  const MAX_Q = 5;
+  let asked = 0;
+
+  function lockChat() {
+    if (input) { input.disabled = true; input.placeholder = '5 / 5 — refresh the page to ask again'; }
+    const sendBtn = form && form.querySelector('.chat-send');
+    if (sendBtn) sendBtn.disabled = true;
+    if (suggest) {
+      suggest.innerHTML = '';
+      const note = document.createElement('div');
+      note.className = 'chat-limit';
+      note.textContent = '// SESSION LIMIT // 5 questions reached — refresh the page (F5) to ask the Black Box again.';
+      suggest.appendChild(note);
+    }
+  }
+
   const SUGG = [
     'What is a black box?',
     'Why openness over automation?',
@@ -79,10 +96,13 @@
   if (form) {
     form.addEventListener('submit', (e) => {
       e.preventDefault();
+      if (asked >= MAX_Q) return;            // already at the session limit
       const t = input.value.trim();
       if (!t) return;
       input.value = '';
+      asked++;
       send(t);
+      if (asked >= MAX_Q) lockChat();        // that was the 5th — lock until refresh
     });
   }
 
