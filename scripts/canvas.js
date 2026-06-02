@@ -1,5 +1,6 @@
 /* canvas.js — builds the messy canvas from the LIVE /api/slides manifest,
    then drives three layouts: scatter (chaos) -> focus (per folder) -> grid (order).
+   Items are always upright (no rotation) and have varied vertical dimensions.
    Falls back to window.SLIDES (offline snapshot) or an inline demo. */
 (function () {
   const world = document.getElementById('world');
@@ -28,6 +29,17 @@
   }
   function measure() { W = world.clientWidth || innerWidth; H = world.clientHeight || innerHeight; }
 
+  // Uniform width, VARIED vertical dimensions (per item, deterministic).
+  function sizeFor(type, gi) {
+    const unit = W < 760 ? 0.6 : (W < 1100 ? 0.82 : 1);
+    const w = Math.round(236 * unit);
+    const heightsImg = [156, 198, 250, 312, 386];
+    const heightsTxt = [206, 262, 330];
+    const arr = type === 'text' ? heightsTxt : heightsImg;
+    const h = Math.round(arr[(gi * 7 + (type === 'text' ? 2 : 0)) % arr.length] * unit);
+    return { w, h };
+  }
+
   function DEMO() {
     return [
       { index: 1, name: 'Intro', folder: '01_Intro', items: [
@@ -43,6 +55,8 @@
   function makeItem(node, item) {
     const fig = document.createElement('figure');
     fig.className = `item type-${item.type} glitchy`;
+    fig.style.width = node.w + 'px';
+    fig.style.height = node.h + 'px';
     const title = (item.type === 'text' ? (item.name || 'README.TXT') : (item.name || item.type)).toUpperCase();
 
     const win = document.createElement('div');
@@ -79,7 +93,7 @@
   function brokenTile(title) {
     const d = document.createElement('div');
     d.className = 'textcard';
-    d.style.color = '#ff2b2b';
+    d.style.color = '#ff00b8';
     d.textContent = 'IMAGE NOT FOUND\n' + title;
     return d;
   }
@@ -87,77 +101,101 @@
   function build() {
     world.innerHTML = '';
     nodes = [];
+    measure();
     let gi = 0;
     slides.forEach((s, fi) => {
       (s.items || []).forEach((item, ii) => {
-        const node = { type: item.type, folder: fi, ii, gi: gi++, x: 0, y: 0, sx: 0, sy: 0, rot: 0, srot: 0, scale: 1, z: 1, op: 1, blur: 0, glitchy: true, delay: 0 };
+        const sz = sizeFor(item.type, gi);
+        const node = { type: item.type, folder: fi, ii, gi: gi++, w: sz.w, h: sz.h, x: 0, y: 0, sx: 0, sy: 0, rot: 0, scale: 1, z: 1, op: 1, blur: 0, glitchy: true, delay: 0 };
         makeItem(node, item);
         nodes.push(node);
       });
     });
     if (loadState) loadState.style.display = 'none';
-    measure();
     scatter();
     render();
   }
 
-  /* ---------- layouts ---------- */
+  /* ---------- layouts (all upright: rot = 0) ---------- */
   function scatter() {
     const r = rng(20240131);
     nodes.forEach((n) => {
-      const pad = 80;
-      n.x = n.sx = pad + r() * Math.max(1, W - pad * 2);
-      n.y = n.sy = pad + r() * Math.max(1, H - pad * 2);
-      n.rot = n.srot = (r() - 0.5) * 32;
-      n.scale = 0.8 + r() * 0.38;
+      const padX = n.w * 0.5 + 8;
+      const padY = n.h * 0.5 + 8;
+      n.x = n.sx = padX + r() * Math.max(1, W - padX * 2);
+      n.y = n.sy = padY + r() * Math.max(1, H - padY * 2);
+      n.rot = 0;
+      n.scale = 1;
       n.z = 1 + ((r() * 30) | 0);
-      n.op = 1; n.blur = 0; n.glitchy = true; n.delay = r() * 0.25;
+      n.op = 1; n.blur = 0; n.glitchy = true; n.delay = r() * 0.22;
     });
   }
 
-  function focus(fo) {
-    const fnodes = nodes.filter((n) => n.folder === fo);
-    const m = fnodes.length || 1;
-    const cols = m <= 3 ? m : Math.ceil(Math.sqrt(m * 1.4));
-    const rows = Math.ceil(m / cols);
-    const targetScale = Math.max(0.6, Math.min(1.55, (W * 0.84 / cols) / 260, (H * 0.6 / rows) / 188));
-    const stepX = 260 * targetScale * 1.12;
-    const stepY = 188 * targetScale * 1.28;
-    const startX = W / 2 - ((cols - 1) * stepX) / 2;
-    const startY = H / 2 - ((rows - 1) * stepY) / 2 + 24;
+  // Compute each node's FINAL grid slot (gx, gy, gs). Used by both the progressive
+  // focus() and the final grid() so items never jump — once placed they keep the slot.
+  function gridSlots() {
+    const ordered = nodes.slice().sort((a, b) => a.folder - b.folder || a.ii - b.ii);
+    const m = ordered.length || 1;
+    const baseW = (nodes[0] && nodes[0].w) || 236;
+    const gapX = 16;
+    const gapY = 16;
+    const cols = Math.max(1, Math.min(m, Math.round(Math.sqrt(m * (W / Math.max(1, H)) * 1.15))));
 
-    fnodes.forEach((n, k) => {
-      const c = k % cols;
-      const rw = Math.floor(k / cols);
-      n.x = startX + c * stepX;
-      n.y = startY + rw * stepY;
-      n.rot = 0; n.scale = targetScale; n.z = 500 + k; n.op = 1; n.blur = 0; n.glitchy = false; n.delay = k * 0.05;
+    const colH = new Array(cols).fill(0);
+    const pos = [];
+    ordered.forEach((n) => {
+      let ci = 0;
+      for (let i = 1; i < cols; i++) if (colH[i] < colH[ci]) ci = i;
+      pos.push({ n, cx: ci * (baseW + gapX) + baseW / 2, top: colH[ci] });
+      colH[ci] += n.h + gapY;
     });
+    const totalW = cols * baseW + (cols - 1) * gapX;
+    const totalH = Math.max.apply(null, colH) - gapY;
+    const s = Math.min(1, (W * 0.94) / totalW, (H * 0.82) / totalH);
+    const offX = (W - totalW * s) / 2;
+    const offY = (H - totalH * s) / 2 + 4;
+
+    pos.forEach(({ n, cx, top }) => {
+      n.gx = offX + cx * s;
+      n.gy = offY + (top + n.h / 2) * s;
+      n.gs = s;
+      n.gdelay = (cx / (totalW || 1)) * 0.25;
+    });
+  }
+
+  // Progressive arrangement: folders already reached snap into their final grid slot
+  // and STAY there; folders not yet reached wait in the scattered back canvas (kept
+  // below the white scrim so they read as softly veiled — never vanishing).
+  function focus(fo) {
+    gridSlots();
     nodes.forEach((n) => {
-      if (n.folder === fo) return;
-      n.x = n.sx; n.y = n.sy; n.rot = n.srot * 0.5;
-      n.scale = 0.55; n.op = 0.14; n.blur = 3; n.z = 1; n.glitchy = false; n.delay = 0;
+      if (n.folder <= fo) {
+        const current = n.folder === fo;
+        n.x = n.gx; n.y = n.gy; n.scale = n.gs;
+        n.rot = 0; n.blur = 0;
+        n.op = 1;                             // window stays FULLY OPAQUE — never see-through,
+                                              // so the repeating background can never bleed through it
+        n.past = !current;                    // earlier slides read "dimmed" via content fade (CSS), not transparency
+        n.z = current ? 520 : 500;            // above the scrim (z 250): sharp, placed
+        n.glitchy = false;
+        n.fresh = current;                    // highlight the folder that just arrived
+        n.delay = current ? 0.05 : 0;
+      } else {
+        n.x = n.sx; n.y = n.sy; n.scale = 1;
+        n.rot = 0; n.op = 1; n.blur = 0;
+        n.z = 1;                              // below the scrim: still present, just veiled
+        n.glitchy = false; n.fresh = false; n.past = false; n.delay = 0;
+      }
     });
     showFolderTitle(fo);
   }
 
   function grid() {
-    const m = nodes.length || 1;
-    const cols = Math.max(1, Math.round(Math.sqrt(m * (W / Math.max(1, H)))));
-    const rows = Math.ceil(m / cols);
-    const cellW = (W * 0.92) / cols;
-    const cellH = (H * 0.8) / rows;
-    const s = Math.max(0.3, Math.min(cellW / 260, cellH / 188) * 0.92);
-    const gx = (W - cols * cellW) / 2 + cellW / 2;
-    const gy = (H - rows * cellH) / 2 + cellH / 2 + 6;
-    const ordered = nodes.slice().sort((a, b) => a.folder - b.folder || a.ii - b.ii);
-    ordered.forEach((n, k) => {
-      const c = k % cols;
-      const rw = Math.floor(k / cols);
-      n.x = gx + c * cellW;
-      n.y = gy + rw * cellH;
-      n.rot = 0; n.scale = s; n.z = 10; n.op = 1; n.blur = 0; n.glitchy = false;
-      n.delay = (c + rw) * 0.045;
+    gridSlots();
+    nodes.forEach((n) => {
+      n.x = n.gx; n.y = n.gy; n.scale = n.gs;
+      n.rot = 0; n.op = 1; n.blur = 0; n.z = 10; n.glitchy = false; n.fresh = false; n.past = false;
+      n.delay = n.gdelay;
     });
     hideFolderTitle();
   }
@@ -172,7 +210,9 @@
       el.style.opacity = n.op;
       el.style.filter = n.blur ? `blur(${n.blur}px)` : 'none';
       el.classList.toggle('glitchy', !!n.glitchy);
-      el.style.transform = `translate(${n.x}px, ${n.y}px) translate(-50%, -50%) rotate(${n.rot}deg) scale(${n.scale})`;
+      el.classList.toggle('fresh', !!n.fresh);
+      el.classList.toggle('past', !!n.past);
+      el.style.transform = `translate(${n.x}px, ${n.y}px) translate(-50%, -50%) scale(${n.scale})`;
       n.delay = 0;
     });
   }
@@ -202,7 +242,7 @@
       if (!dragging) return;
       n.x = ox + (e.clientX - sx);
       n.y = oy + (e.clientY - sy);
-      el.style.transform = `translate(${n.x}px, ${n.y}px) translate(-50%, -50%) rotate(${n.rot}deg) scale(${n.scale})`;
+      el.style.transform = `translate(${n.x}px, ${n.y}px) translate(-50%, -50%) scale(${n.scale})`;
     });
     function end(e) {
       if (!dragging) return;

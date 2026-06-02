@@ -10,7 +10,8 @@
   const actLabel = document.getElementById('actLabel');
   const folderLabel = document.getElementById('folderLabel');
   const progress = document.getElementById('progress');
-  const actIntro = document.getElementById('act-intro');
+  const introWin = document.getElementById('introWin');
+  const scrim = document.getElementById('scrim');
   const actCanvas = document.getElementById('act-canvas');
   const chatModal = document.getElementById('chatModal');
   const chatClose = document.getElementById('chatClose');
@@ -57,14 +58,15 @@
     actLabel.textContent = `ACT ${p.act} / 4 · ${p.name}`;
     setClean();
 
-    actIntro.classList.toggle('is-active', step === 0);
-    actCanvas.classList.toggle('is-active', step >= 1);
+    introWin.classList.toggle('hidden', step !== 0);
 
-    if (step === 0) {
-      folderLabel.textContent = 'SYS://READY';
-    } else if (step === 1) {
+    // white blurred backdrop behind the intro popup and the focus/zoom (white acts only;
+    // never on the black rationalization/chat acts)
+    if (scrim) scrim.classList.toggle('show', step === 0 || (step >= 2 && step <= N + 1) || step === N + 3);
+
+    if (step <= 1) {
       Canvas.scatterView();
-      folderLabel.textContent = `RAW // ${N} FOLDER${N === 1 ? '' : 'S'}`;
+      folderLabel.textContent = step === 0 ? 'SYS://READY' : `RAW // ${N} FOLDER${N === 1 ? '' : 'S'}`;
     } else if (step >= 2 && step <= N + 1) {
       const fo = step - 2;
       Canvas.focusView(fo);

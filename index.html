@@ -4,28 +4,117 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>INSIDE THE BLACK BOX // Simondon's Politics of Technology</title>
-  <meta name="description" content="A dynamic glitch presentation on Simondon's politics of technology, after Henning Schmidgen — from chaos to rationalization." />
+  <meta name="description" content="A dynamic Windows 95/98 glitch-collage presentation on Simondon's politics of technology, after Henning Schmidgen — from chaos to rationalization." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=VT323&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Saira+Condensed:wght@600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles/main.css" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23070710'/%3E%3Crect x='8' y='8' width='16' height='16' fill='%23000' stroke='%2300fff0'/%3E%3C/svg%3E" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23fff'/%3E%3Crect x='6' y='6' width='20' height='20' fill='none' stroke='%230a30ff' stroke-width='2'/%3E%3Crect x='6' y='6' width='20' height='5' fill='%23000080'/%3E%3C/svg%3E" />
 </head>
 <body data-step="0" data-act="1" style="--clean:0;">
 
-  <!-- ===== GLOBAL FX OVERLAYS ===== -->
-  <div class="fx fx-grain" aria-hidden="true"></div>
-  <div class="fx fx-scanlines" aria-hidden="true"></div>
-  <div class="fx fx-rgb" aria-hidden="true"></div>
+  <!-- ===== GLOBAL FX (white ground / dither / datamosh smear) ===== -->
   <div class="fx fx-vignette" aria-hidden="true"></div>
+  <div class="fx fx-grain" aria-hidden="true"></div>
+  <div class="fx fx-rgb" aria-hidden="true"></div>
+  <div class="fx fx-scanlines" aria-hidden="true"></div>
   <div class="fx fx-glitchburst" aria-hidden="true"></div>
 
-  <!-- ===== CUSTOM GLITCH CURSOR ===== -->
+  <!-- ===== DECOR LAYER — CHAOTIC MINIMALISM ============================
+       A dense blue datamosh cluster anchored top-left, exploding
+       diagonally toward the white void at bottom-right. Everything
+       here fades/aligns as var(--chaos) -> 0 (act 4).
+       ================================================================ -->
+  <div class="deco" aria-hidden="true">
+
+    <!-- the explosive datamosh cluster (top-left dense -> trailing SE) -->
+    <div class="moshfield">
+      <!-- horizontal pixel-stretch smear bands (frozen dragged window) -->
+      <i class="mosh" style="top:5%;  left:3%;  width:30%; height:30px;"></i>
+      <i class="mosh" style="top:14%; left:1%;  width:42%; height:14px;"></i>
+      <i class="mosh" style="top:20%; left:8%;  width:34%; height:48px;"></i>
+      <i class="mosh m2" style="top:30%; left:2%;  width:26%; height:22px;"></i>
+      <i class="mosh" style="top:38%; left:6%;  width:38%; height:18px;"></i>
+      <i class="mosh m2" style="top:46%; left:0;   width:22%; height:9px;"></i>
+      <i class="mosh" style="top:54%; left:4%;  width:30%; height:34px;"></i>
+      <i class="mosh" style="top:9%;  left:30%; width:46%; height:10px;"></i>
+      <i class="mosh m3" style="top:24%; left:34%; width:30%; height:60px;"></i>
+      <i class="mosh" style="top:42%; left:30%; width:24%; height:12px;"></i>
+      <!-- thinning trail into the void -->
+      <i class="mosh m2" style="top:60%; left:34%; width:16%; height:7px;"></i>
+      <i class="mosh" style="top:66%; left:46%; width:14%; height:5px; opacity:.5;"></i>
+      <i class="mosh m3" style="top:72%; left:54%; width:10%; height:9px; opacity:.4;"></i>
+    </div>
+
+    <!-- repeated mini-dialog clones, datamoshed, scattered in the cluster -->
+    <div class="miniwin" style="top:12%; left:5%;  transform:scale(1.15);"><b>SYSTEM</b><s></s><s></s></div>
+    <div class="miniwin mw-mosh" style="top:30%; left:11%; transform:scale(1);"><b>OK?</b><s></s></div>
+    <div class="miniwin" style="top:45%; left:6%;  transform:scale(.85);"><b>RUN</b><s></s><s></s></div>
+    <div class="miniwin mw-mosh" style="top:21%; left:38%; transform:scale(1.3);"><b>ERROR</b><s></s></div>
+    <div class="miniwin" style="top:56%; left:24%; transform:scale(.7);"><b>WAIT</b><s></s></div>
+
+    <!-- the HERO motif: stacked status words, smeared with RGB echo drag -->
+    <div class="statusstack" style="top:30%; left:46%;">
+      <span class="statusword" data-text="Inactive">Inactive</span>
+      <span class="statusword sw-on" data-text="Active">Active</span>
+      <span class="statusword" data-text="Normal">Normal</span>
+    </div>
+
+    <!-- top toolbar strip: row of tiny repeated square icons -->
+    <div class="toolstrip">
+      <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+    </div>
+
+    <!-- registration crosshairs + thin arrows + tiny boxes scattered -->
+    <i class="xhair" style="top:8%;  left:62%;"></i>
+    <i class="xhair" style="top:48%; left:30%;"></i>
+    <i class="xhair" style="top:64%; left:50%;"></i>
+    <i class="xhair sm" style="top:18%; left:55%;"></i>
+    <i class="xhair sm" style="top:76%; left:66%;"></i>
+    <i class="tickbox" style="top:13%; left:70%;"></i>
+    <i class="tickbox" style="top:58%; left:60%;"></i>
+    <i class="arrow" style="top:25%; left:64%; transform:rotate(28deg);"></i>
+    <i class="arrow" style="top:55%; left:44%; transform:rotate(-18deg);"></i>
+    <i class="leader" style="top:34%; left:58%; width:90px; transform:rotate(12deg);"></i>
+    <i class="leader" style="top:68%; left:40%; width:120px; transform:rotate(-6deg);"></i>
+
+    <!-- registration clock icon top-center -->
+    <i class="regclock" style="top:3%; left:46%;"></i>
+
+    <!-- vertical rotated sidebar caption (90deg) -->
+    <div class="vcaption" style="top:18%; left:1%;">RATIONALIZE // THE&nbsp;BLACK&nbsp;BOX</div>
+
+    <!-- repeated Courier echo block, fading down toward the void -->
+    <div class="echoblock" style="bottom:7%; left:40%;">
+      <span>I agree to the terms of the black box.</span>
+      <span>I agree to the terms of the black box.</span>
+      <span>I agree to the terms of the black box.</span>
+      <span>I agree to the terms of the black box.</span>
+      <span>I agree to the terms of the black box.</span>
+    </div>
+
+    <!-- small rating-style badge bottom-right -->
+    <div class="ratebox" style="bottom:9%; right:4%;">
+      <b>SYS</b><s>RATIONALIZED</s>
+    </div>
+  </div>
+
+  <!-- ===== BOOT WINDOW FLOOD (opens many windows once, then stops) ===== -->
+  <div id="flood" aria-hidden="true"></div>
+
+  <!-- ===== CUSTOM CURSOR (thin blue registration crosshair) ===== -->
   <div id="cursor" class="cursor" aria-hidden="true">
     <span class="cur cur-c"></span>
     <span class="cur cur-m"></span>
     <span class="cur cur-y"></span>
     <span class="cur-tag" id="cursorTag">RATIONALIZE</span>
+  </div>
+
+  <!-- ===== TOOLBAR STRIP (was menubar) — thin technical chrome ===== -->
+  <div class="menubar" aria-hidden="true">
+    <span>File</span><span>Edit</span><span>View</span><span>Insert</span><span>Technics</span><span>Help</span>
+    <span class="mb-spacer"></span>
+    <span class="mb-clock" id="mbClock">--:--</span>
   </div>
 
   <!-- ===== HUD ===== -->
@@ -40,33 +129,34 @@
   <!-- ===== STAGE ===== -->
   <main id="stage" class="stage">
 
-    <!-- ACT 1 — THE BLACK BOX -->
-    <section id="act-intro" class="act act-intro is-active">
-      <div class="intro-grid">
-        <div class="intro-box">
-          <div class="boxthing glitch" data-text="?">
-            <span class="boxthing-face"></span>
-            <span class="boxthing-q">?</span>
+    <!-- WHITE BLURRED BACKDROP — sits between the messy/receding canvas (below) and the
+         hero element on top (intro window / zoomed slide / chat). Lives inside the stage
+         stacking context so item z-index can rise above it. -->
+    <div id="scrim" aria-hidden="true"></div>
+
+    <!-- ONE CONTINUOUS CANVAS — the intro window lives ON the canvas -->
+    <section id="act-canvas" class="act act-canvas is-active">
+      <div id="world" class="world" aria-label="The messy desktop of raw material"></div>
+
+      <!-- intro window: part of the canvas, not a separate slide -->
+      <div id="introWin" class="intro-win">
+        <div class="win win-dialog">
+          <div class="winbar"><span class="wb-dot"></span><span class="wb-title">INSIDE_THE_BLACK_BOX.EXE</span><span class="wb-btns"><i>_</i><i>&#9633;</i><i class="wb-x">&#10005;</i></span></div>
+          <div class="intro-copy">
+            <p class="eyebrow">A THEORY TRANSMISSION · IAAC</p>
+            <h1 class="display glitch" data-text="INSIDE THE BLACK BOX">INSIDE THE BLACK BOX</h1>
+            <p class="subhead">Gilbert Simondon's <em>politics of technology</em> — after Henning Schmidgen.</p>
+            <blockquote class="pullquote">
+              &ldquo;First a gothic cathedral, <span class="hl">then a kitchen.</span>&rdquo;
+              <cite>— Roland Barthes, on the Citroën D.S.</cite>
+            </blockquote>
+            <p class="leadin">We admire the surface. We never open it. The machine arrives sealed, smooth, <span class="redact">mute</span>. Tonight we open it.</p>
+            <div class="intro-actions">
+              <button id="openBtn" class="btn btn-big" data-text="OPEN THE BOX">OPEN THE BOX <span class="btn-arrow">▸</span></button>
+            </div>
           </div>
-          <div class="intro-marquee"><span>OPACITY&nbsp;//&nbsp;ALIENATION&nbsp;//&nbsp;AUTOMATION&nbsp;//&nbsp;CLOSURE&nbsp;//&nbsp;SLICK&nbsp;//&nbsp;MUTE&nbsp;//&nbsp;OPACITY&nbsp;//&nbsp;ALIENATION&nbsp;//&nbsp;AUTOMATION&nbsp;//&nbsp;CLOSURE&nbsp;//&nbsp;SLICK&nbsp;//&nbsp;MUTE&nbsp;//&nbsp;</span></div>
-        </div>
-        <div class="intro-copy">
-          <p class="eyebrow">A THEORY TRANSMISSION · IAAC</p>
-          <h1 class="display glitch" data-text="INSIDE THE BLACK BOX">INSIDE THE&nbsp;BLACK&nbsp;BOX</h1>
-          <p class="subhead">Gilbert Simondon's <em>politics of technology</em> — after Henning Schmidgen.</p>
-          <blockquote class="pullquote">
-            &ldquo;First a gothic cathedral, <span class="hl">then a kitchen.</span>&rdquo;
-            <cite>— Roland Barthes, on the Citroën D.S.</cite>
-          </blockquote>
-          <p class="leadin">We admire the surface. We never open it. <br/>The machine arrives sealed, smooth, <span class="redact">mute</span>. Tonight we open it.</p>
-          <button id="openBtn" class="btn btn-big" data-text="OPEN THE BOX">OPEN THE BOX <span class="btn-arrow">▸</span></button>
         </div>
       </div>
-    </section>
-
-    <!-- ACT 2/3 — THE MESSY CANVAS + RATIONALIZATION -->
-    <section id="act-canvas" class="act act-canvas">
-      <div id="world" class="world" aria-label="The messy canvas of raw material"></div>
 
       <div id="folderTitle" class="folder-title" aria-hidden="true">
         <span class="ft-idx">01</span>
@@ -75,24 +165,26 @@
 
       <div id="loadState" class="load-state">LOADING THE INSIDE OF THE BOX<span class="blink">_</span></div>
 
-      <!-- Rationalization payoff -->
       <div id="rationalize" class="rationalize" aria-hidden="true">
-        <div class="rat-inner">
-          <p class="rat-kicker">ORDER WHERE THERE WAS CHAOS</p>
-          <p class="rat-line">Our job is not to work with scrambled information.</p>
-          <p class="rat-line rat-dim">The black box already does that.</p>
-          <p class="rat-line rat-big">What matters is how <span class="hl">we</span> rationalize it.</p>
+        <div class="win rat-win" role="dialog" aria-label="Rationalized">
+          <div class="winbar"><span class="wb-dot"></span><span class="wb-title">RATIONALIZED.LOG — ORDER FROM CHAOS</span><span class="wb-btns"><i>_</i><i>&#9633;</i><i class="wb-x">&#10005;</i></span></div>
+          <div class="rat-inner">
+            <p class="rat-kicker">ORDER WHERE THERE WAS CHAOS</p>
+            <p class="rat-line">Our job is not to work with scrambled information.</p>
+            <p class="rat-line rat-dim">The black box already does that.</p>
+            <p class="rat-line rat-big">What matters is how <span class="hl">we</span> rationalize it.</p>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- ACT 4 — THE RATIONALIZER (chatbot popup) -->
+    <!-- ACT 4 — CHATBOT -->
     <div id="chatModal" class="chat-modal" aria-hidden="true">
       <div class="win chat-win" role="dialog" aria-label="Ask the Black Box">
         <div class="winbar winbar-chat">
           <span class="wb-dot"></span>
           <span class="wb-title">THE_RATIONALIZER.EXE — ASK THE BLACK BOX</span>
-          <span class="wb-btns"><i>_</i><i>▢</i><i class="wb-x" id="chatClose">✕</i></span>
+          <span class="wb-btns"><i>_</i><i>&#9633;</i><i class="wb-x" id="chatClose">&#10005;</i></span>
         </div>
         <div class="chat-body">
           <p class="chat-prompt">
@@ -102,7 +194,7 @@
           <div id="chatLog" class="chat-log"></div>
           <div class="chat-suggest" id="chatSuggest"></div>
           <form id="chatForm" class="chat-form" autocomplete="off">
-            <span class="chat-prefix">you@blackbox:~$</span>
+            <span class="chat-prefix">C:\&gt;</span>
             <input id="chatInput" class="chat-input" type="text" placeholder="ask anything you saw…" maxlength="400" />
             <button class="btn chat-send" type="submit">SEND ▸</button>
           </form>
@@ -112,18 +204,25 @@
 
   </main>
 
-  <!-- ===== NAV ===== -->
+  <!-- ===== NAV (taskbar) ===== -->
   <nav class="nav">
     <button id="prevBtn" class="btn btn-nav" disabled>◂ BACK</button>
     <div id="progress" class="progress" aria-hidden="true"></div>
     <button id="nextBtn" class="btn btn-nav btn-next" data-text="NEXT">NEXT ▸</button>
   </nav>
 
-  <!-- Optional offline snapshot fallback (generated by `npm run snapshot`). -->
   <script src="slides-data.js" onerror="window.__noSnapshot=true"></script>
   <script src="scripts/glitch.js" defer></script>
   <script src="scripts/canvas.js" defer></script>
   <script src="scripts/chatbot.js" defer></script>
   <script src="scripts/state.js" defer></script>
+  <script src="scripts/flood.js" defer></script>
+  <script>
+    (function () {
+      var c = document.getElementById('mbClock');
+      function t() { if (c) { var d = new Date(); c.textContent = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); } }
+      t(); setInterval(t, 10000);
+    })();
+  </script>
 </body>
 </html>

@@ -4,7 +4,7 @@
 import { streamText } from 'ai';
 import { scanSlides, summarize } from '../lib/scan.mjs';
 
-const MODEL = process.env.CHAT_MODEL || 'anthropic/claude-sonnet-4-6';
+const MODEL = process.env.CHAT_MODEL || 'anthropic/claude-haiku-4-5';
 
 function buildSystem(context) {
   return `You are THE BLACK BOX — an interactive oracle for a theory class on Gilbert Simondon's politics of technology, framed by Henning Schmidgen's essay "Inside the Black Box."

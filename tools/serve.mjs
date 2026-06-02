@@ -1,12 +1,14 @@
-/* serve.mjs — tiny static preview server (no login required).
+/* serve.mjs — tiny preview server (no login required).
    Run:  npm run preview   ->  http://localhost:5050
-   This serves the page + assets only. /api/* is NOT available here, so the
-   canvas uses the slides-data.js snapshot and the chatbot shows its offline
-   fallback. For the full experience (live /api/slides + AI chat) use `vercel dev`. */
+   Serves the page + assets AND a LIVE /api/slides that scans Slides_Datasets on
+   every request — so dropping images/txt into the numbered folders and reloading
+   updates the page instantly. /api/chat is not served here (no AI key), so the
+   chatbot shows its offline fallback; use `vercel dev` for live AI. */
 import http from 'node:http';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { scanSlides } from '../lib/scan.mjs';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = process.env.PORT || 5050;
@@ -20,6 +22,13 @@ const TYPES = {
 http.createServer(async (req, res) => {
   try {
     let p = decodeURIComponent(req.url.split('?')[0]);
+    if (p === '/api/slides') {
+      const { slides } = await scanSlides();
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-store');
+      res.end(JSON.stringify({ ok: true, count: slides.length, slides }));
+      return;
+    }
     if (p === '/') p = '/index.html';
     const file = path.join(root, p);
     if (!file.startsWith(root)) { res.statusCode = 403; return res.end('forbidden'); }
