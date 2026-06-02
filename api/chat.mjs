@@ -4,6 +4,7 @@
 import { streamText } from 'ai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { scanSlides, summarize } from '../lib/scan.mjs';
+import { scanPdfs, summarizePdfs } from '../lib/pdfs.mjs';
 
 const MODEL = process.env.CHAT_MODEL || 'anthropic/claude-haiku-4-5';
 
@@ -18,7 +19,7 @@ function resolveModel() {
   return MODEL; // gateway string
 }
 
-function buildSystem(context) {
+function buildSystem(canvasContext, papersContext) {
   return `You are THE BLACK BOX — an interactive oracle for a theory class on Gilbert Simondon's politics of technology, framed by Henning Schmidgen's essay "Inside the Black Box."
 
 The thesis you embody:
@@ -28,9 +29,16 @@ The thesis you embody:
 
 The audience just walked a glitch presentation that scattered raw material across a canvas, then rationalized it folder by folder. They now take the role of "the rationalizer" and question you.
 
-LIVE content currently on the canvas (folders + notes) — ground your answers in it when relevant:
+You have TWO live knowledge sources. Always ground your answers in BOTH when relevant — weave together the source papers and the canvas, and never claim you lack material when these sections are populated.
+
+[SOURCE 1] LIVE content currently on the canvas (folders + notes):
 ---
-${context || '(the canvas is still empty)'}
+${canvasContext || '(the canvas is still empty)'}
+---
+
+[SOURCE 2] The source PAPERS (PDFs) behind the class — extracted text excerpts:
+---
+${papersContext || '(no papers available)'}
 ---
 
 Voice: incisive, slightly glitchy and aphoristic, yet genuinely informative. Keep answers short (2-5 sentences). Provoke thought; sometimes end with a question back at the human. Always answer in English.`;
@@ -59,12 +67,13 @@ export default async function handler(req, res) {
       return;
     }
 
-    const { slides } = await scanSlides();
-    const context = summarize(slides);
+    const [{ slides }, { pdfs }] = await Promise.all([scanSlides(), scanPdfs()]);
+    const canvasContext = summarize(slides);
+    const papersContext = summarizePdfs(pdfs);
 
     const result = streamText({
       model: resolveModel(),
-      system: buildSystem(context),
+      system: buildSystem(canvasContext, papersContext),
       messages,
       temperature: 0.85,
       // surface auth/model errors as readable text in the chat instead of a dead stream

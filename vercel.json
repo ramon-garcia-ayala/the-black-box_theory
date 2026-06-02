@@ -4,7 +4,7 @@
   "trailingSlash": false,
   "functions": {
     "api/*.mjs": {
-      "includeFiles": "Slides_Datasets/**"
+      "includeFiles": "{Slides_Datasets,assets/PDF}/**"
     }
   },
   "headers": [
