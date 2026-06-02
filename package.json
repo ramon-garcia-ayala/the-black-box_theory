@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.80",
-    "ai": "^5.0.0"
+    "ai": "^5.0.0",
+    "unpdf": "^1.6.2"
   },
   "devDependencies": {
     "playwright": "^1.60.0"

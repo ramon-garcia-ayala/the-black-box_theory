@@ -1,6 +1,8 @@
 /* canvas.js — builds the messy canvas from the LIVE /api/slides manifest,
    then drives three layouts: scatter (chaos) -> focus (per folder) -> grid (order).
-   Items are always upright (no rotation) and have varied vertical dimensions.
+   Items are always upright (no rotation); the FRAME ORIENTATION follows the media it holds
+   (a wide image gets a landscape frame, a tall one a portrait frame) — width stays uniform,
+   the height is derived from each image/video's real aspect ratio once it loads.
    Falls back to window.SLIDES (offline snapshot) or an inline demo. */
 (function () {
   const world = document.getElementById('world');
@@ -29,7 +31,9 @@
   }
   function measure() { W = world.clientWidth || innerWidth; H = world.clientHeight || innerHeight; }
 
-  // Uniform width, VARIED vertical dimensions (per item, deterministic).
+  // Uniform width. The height is a PLACEHOLDER until the media loads; for images/videos it
+  // is then replaced by an aspect-derived height (see applyOrientation) so the frame takes
+  // the media's orientation. Text cards keep this varied height (no natural orientation).
   function sizeFor(type, gi) {
     const unit = W < 760 ? 0.6 : (W < 1100 ? 0.82 : 1);
     const w = Math.round(236 * unit);
@@ -39,6 +43,22 @@
     const arr = type === 'text' ? heightsTxt : heightsImg;
     const h = Math.round(arr[(gi * 7 + (type === 'text' ? 2 : 0)) % arr.length] * unit);
     return { w, h };
+  }
+
+  // Frame orientation = media orientation. Keep the uniform width and set the height from the
+  // real aspect ratio: wide media -> short (landscape frame), tall media -> high (portrait
+  // frame). Clamped so extreme panoramas/strips stay readable. We only mirror the ORIENTATION,
+  // not the exact pixel size. Layouts (gridSlots/zoomCluster/focus/grid) read node.h live, so
+  // updating it here is picked up the next time a view is applied; we also resize in place now.
+  function applyOrientation(node, natW, natH) {
+    if (!natW || !natH) return;
+    const h = Math.round(Math.max(node.w * 0.5, Math.min(node.w * 1.7, node.w * (natH / natW))));
+    if (h === node.h) return;
+    node.h = h;
+    if (node.el) {
+      node.el.style.height = h + 'px';
+      node.el.style.transform = `translate(${node.x}px, ${node.y}px) translate(-50%, -50%) scale(${node.scale})`;
+    }
   }
 
   function DEMO() {
@@ -81,12 +101,15 @@
       const v = document.createElement('video');
       v.src = item.src; v.muted = true; v.loop = true; v.autoplay = true;
       v.playsInline = true; v.setAttribute('playsinline', '');
+      v.addEventListener('loadedmetadata', () => applyOrientation(node, v.videoWidth, v.videoHeight));
       body.appendChild(v);
       const t = document.createElement('span'); t.className = 'vid-tag'; t.textContent = 'VIDEO'; body.appendChild(t);
     } else {
       const img = document.createElement('img');
       img.src = item.src; img.alt = title; img.loading = 'lazy'; img.decoding = 'async';
       img.addEventListener('error', () => { img.replaceWith(brokenTile(title)); });
+      img.addEventListener('load', () => applyOrientation(node, img.naturalWidth, img.naturalHeight));
+      if (img.complete && img.naturalWidth) applyOrientation(node, img.naturalWidth, img.naturalHeight);
       body.appendChild(img);
       if (item.type === 'gif') { const t = document.createElement('span'); t.className = 'gif-tag'; t.textContent = 'GIF'; body.appendChild(t); }
     }

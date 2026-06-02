@@ -90,6 +90,21 @@ adds a step. The chatbot also re-reads this content, so the AI "knows" every new
 
 > Prioritise **images over long text** — the design is built for a visual collage.
 
+### Source papers (`assets/PDF/`) — the chatbot's second knowledge source
+
+The chatbot grounds its answers in **two** live sources: the canvas (`Slides_Datasets/`)
+**and** the source papers in **`assets/PDF/`**. `lib/pdfs.mjs` scans `assets/PDF/` on each
+chat request, extracts each PDF's text (via `unpdf`) and feeds it into the system prompt
+alongside the canvas brief — so the AI always "knows" both the slides and the papers.
+
+This is **fully scalable**: drop any new `.pdf` into `assets/PDF/` and **commit + push** — it
+is picked up automatically, no rebuild and no code change. Extraction is memoised per
+file (name + mtime + size), so a PDF is parsed once per warm function instance; replacing
+a PDF re-extracts it on the next request. To keep the prompt bounded, each paper contributes
+a capped excerpt (`perPdf`) within an overall cap (`maxChars`) — tune these in
+`summarizePdfs()` if you add many papers. (`vercel.json` bundles `assets/PDF/**` into the
+functions via `includeFiles`, so the scan works in production too — remember to commit the PDFs.)
+
 ---
 
 ## Architecture
@@ -108,13 +123,15 @@ scripts/
   flood.js              Boot "window flood" — runs only as the box opens (Act 2), never during Act 1
 api/
   slides.mjs            GET — live manifest of Slides_Datasets (scanned per request)
-  chat.mjs              POST — AI answer (AI SDK + Vercel AI Gateway), context from scan
-lib/scan.mjs            Shared directory scanner (single source of truth)
+  chat.mjs              POST — AI answer (AI SDK + Vercel AI Gateway); context = canvas scan + PDF papers
+lib/scan.mjs            Shared directory scanner for Slides_Datasets (single source of truth)
+lib/pdfs.mjs            Shared PDF scanner for assets/PDF/ — extracts text (unpdf), grounds the chatbot
 tools/build-slides.mjs  OPTIONAL: writes slides-data.js snapshot for file:// fallback
 Slides_Datasets/NN_*/   YOUR CONTENT
-PDF/                    Source papers (Schmidgen / Simondon)
+assets/PDF/             Source papers (Schmidgen / Simondon …)
+assets/                 UI reference images + team art (not served; staging/reference)
 slides-data.js          OPTIONAL offline snapshot (generated)
-vercel.json             Functions config (includeFiles: Slides_Datasets/**)
+vercel.json             Functions config (includeFiles: Slides_Datasets/** + assets/PDF/**)
 ```
 
 **Why Vercel (not plain GitHub Pages):** a static host cannot list directory
