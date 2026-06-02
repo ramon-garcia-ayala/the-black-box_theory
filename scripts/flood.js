@@ -63,15 +63,31 @@
     })();
   }
 
+  // Pre-collect the window templates (cheap, no animation) but DO NOT start the
+  // boot flood yet — it must stay silent during Act 1 (the calm intro splash).
   let tries = 0;
   (function waitForCanvas() {
-    if (collect() > 0) setTimeout(snake, 300);
-    else if (tries++ < 80) setTimeout(waitForCanvas, 150);
+    if (collect() > 0) return;
+    if (tries++ < 80) setTimeout(waitForCanvas, 150);
   })();
 
+  let started = false;
+  function start() {
+    if (started || stopped) return;
+    started = true;
+    if (!templates.length) collect();
+    setTimeout(snake, 60);
+  }
   function clear() { stopped = true; host.classList.add('gone'); }
-  const ob = document.getElementById('openBtn');
-  if (ob) ob.addEventListener('click', clear);
-  const nb = document.getElementById('nextBtn');
-  if (nb) nb.addEventListener('click', clear);
+
+  // Drive purely off the narrative step: run the flood as the box opens (entering
+  // Act 2, step 1) and clear it the moment we advance into the first focus (step 2+).
+  const body = document.body;
+  function onStep() {
+    const s = body.dataset.step;
+    if (s === '1') start();          // box just opened → run the boot flood once
+    else if (started) clear();        // advanced on, or stepped back to Act 1 → stop it
+  }
+  new MutationObserver(onStep).observe(body, { attributes: true, attributeFilter: ['data-step'] });
+  onStep();
 })();

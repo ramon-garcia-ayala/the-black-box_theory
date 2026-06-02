@@ -20,6 +20,7 @@
   --navy: #000080;        /* win98 title gradient start */
   --magenta: #ff00b8;     /* rare accent only */
   --cyan: #00e5ff;
+  --yellow: #f2ff00;      /* highlighter marker (intro splash) */
   --ink: #06060c;
   --hair: #0b0b14;        /* black hairline */
 
@@ -70,9 +71,11 @@ body {
 body[data-act="3"] .item {
   transition: transform 1.15s cubic-bezier(.22, 1, .36, 1), opacity .8s var(--ease), filter .8s var(--ease);
 }
-/* each window softly floats up and settles into place, staggered by --d */
-body[data-act="3"] .item .win { animation: settle .9s var(--ease) both; animation-delay: var(--d, 0s); }
-@keyframes settle { from { transform: translateY(12px); opacity: .25; } to { transform: translateY(0); opacity: 1; } }
+/* In Act 3 the windows START exactly where Act 2 left them (no drop-in / re-settle) and
+   then drift gently in place — each with its own random phase (--fp) so the whole grid
+   floats softly, like the calm settling in. */
+body[data-act="3"] .item .win { animation: gridfloat calc(5.5s + var(--fp, 0) * 3.5s) ease-in-out infinite; }
+@keyframes gridfloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
 /* the repetitive background decor disappears in the calm acts */
 body[data-act="3"] .deco, body[data-act="4"] .deco { opacity: 0; }
 body[data-act="3"] .fx-vignette,  body[data-act="4"] .fx-vignette,
@@ -102,12 +105,12 @@ body[data-act="3"] .fx-rgb,       body[data-act="4"] .fx-rgb { opacity: 0; }
    focus-receding z 1) but below the hero on top — zoomed slide (z 500), intro window (z 400),
    chat modal (z 600). #world must NOT trap items in its own context (see .world z-index: auto). */
 #scrim { position: absolute; inset: 0; z-index: 250; pointer-events: none; opacity: 0; visibility: hidden;
-  background: rgba(255,255,255,.5); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-  transition: opacity .45s var(--ease), visibility .45s var(--ease); }
+  background: rgba(255,255,255,.82); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  transition: opacity .6s var(--ease), visibility .6s var(--ease), background-color .9s var(--ease); }
 #scrim.show { opacity: 1; visibility: visible; }
-/* at the chat (act 4) the veil goes SOLID white — everything behind disappears into a
-   completely clean, light, quiet scene: the arrival of "calm" behind the chat. */
-body[data-act="4"] #scrim { background: var(--paper); backdrop-filter: none; -webkit-backdrop-filter: none; }
+/* at the chat (act 4) the veil settles SOLID into the electric blue of Act 1 — the scene
+   comes full circle, calm and saturated, with everything behind it gone. */
+body[data-act="4"] #scrim { background: var(--blue); backdrop-filter: none; -webkit-backdrop-filter: none; }
 
 #flood { position: fixed; inset: 0; z-index: 40; pointer-events: none; transition: opacity .5s var(--ease); }
 #flood.gone { opacity: 0; }
@@ -378,30 +381,125 @@ body[data-act="4"] #scrim { background: var(--paper); backdrop-filter: none; -we
 .intro-marquee { display: none; }
 
 .win-dialog { }
-.intro-win {
-  position: absolute; left: 50%; top: 48%; transform: translate(-50%, -50%);
-  z-index: 400; width: min(820px, 92vw);
-  /* frame + soft float come from the inner .win-dialog "web window" chrome */
-  transition: opacity .5s var(--ease), transform .5s var(--ease);
-}
-.intro-win.hidden { opacity: 0; visibility: hidden; transform: translate(-50%, -64%) scale(.96); pointer-events: none; }
-.intro-copy { padding: 24px 28px 28px; background: var(--paper); box-shadow: inset 0 0 0 1px var(--hair); }
-.eyebrow { font: 700 11px/1 var(--font-cond); letter-spacing: 4px; text-transform: uppercase; color: var(--blue); margin-bottom: 14px; }
 
-/* heavy slab display — RGB-drag echo smear removed, plain single-colour text */
-.display {
-  font-family: var(--font-mono); font-weight: 700; font-style: normal;
-  font-size: clamp(30px, 6vw, 68px); line-height: .98; letter-spacing: -1px; text-transform: uppercase; color: var(--blue);
+/* Act 1 is a calm full-screen splash. The messy canvas, its decor and the boot
+   flood all belong to Act 2 — keep them fully inert (no paint, no animation, no
+   running timers reaching visible DOM) while we are still on the intro (step 0). */
+body[data-step="0"] #world,
+body[data-step="0"] #flood,
+body[data-step="0"] .deco,
+body[data-step="0"] .fx-grain,
+body[data-step="0"] .fx-rgb,
+body[data-step="0"] .fx-scanlines { display: none !important; }
+
+/* ============================================================
+   ACT 1 — FULL-SCREEN BLUE SPLASH (the title page)
+   Flat electric-blue field, dim monospace margin notes in the four
+   corners, a yellow-highlighter manifesto + team in the centre.
+   ============================================================ */
+.intro-win {
+  position: fixed; inset: 0; width: 100%; height: 100%;
+  z-index: 400;
+  transition: visibility 0s var(--ease) 0s;
 }
-.subhead { font: 400 clamp(14px, 1.6vw, 18px)/1.4 var(--font-mono); margin: 16px 0 0; color: var(--ink); }
-.subhead em { color: var(--blue); font-style: italic; font-weight: 700; }
-.pullquote { margin: 18px 0; padding: 8px 0 8px 14px; border-left: 2px solid var(--blue); font-family: var(--font-mono); font-size: clamp(17px, 2.3vw, 28px); font-weight: 700; line-height: 1.08; color: var(--ink); }
-.pullquote cite { display: block; margin-top: 8px; font: 400 12px/1 var(--font-mono); color: var(--sh); font-style: normal; }
-.hl { background: var(--blue); color: #fff; padding: 0 .12em; }
-.hl-m { color: var(--magenta); } .hl-y { color: var(--blue); }
-.leadin { margin: 10px 0 0; color: #2a2a3a; max-width: 54ch; font-family: var(--font-mono); }
-.redact { background: var(--ink); color: var(--ink); padding: 0 .25em; } .redact:hover { color: var(--paper); }
-.intro-actions { margin-top: 18px; display: flex; gap: 10px; }
+/* Act 1 -> Act 2 transition: the pieces don't fall — they switch OFF in staggered
+   waves (several at a time, dissolving with a soft blur), then the blue field clears
+   last to reveal the messy canvas of Act 2 underneath. */
+.intro-win.hidden { visibility: hidden; pointer-events: none; transition-delay: 1.25s; }
+
+.intro-screen { transition: opacity .55s var(--ease); }
+.intro-eyebrow, .intro-headline, .intro-sub,
+.intro-manifesto span, .intro-team, .inote p {
+  transition: opacity .34s var(--ease), filter .34s var(--ease);
+}
+
+.intro-win.hidden .intro-eyebrow,
+.intro-win.hidden .intro-headline,
+.intro-win.hidden .intro-sub,
+.intro-win.hidden .intro-manifesto span,
+.intro-win.hidden .intro-team,
+.intro-win.hidden .inote p { opacity: 0; filter: blur(2px); }
+
+/* scattered delays so groups go dark "several at once", not in a single sweep */
+.intro-win.hidden .intro-eyebrow                  { transition-delay: .04s; }
+.intro-win.hidden .intro-sub                       { transition-delay: .12s; }
+.intro-win.hidden .intro-headline                  { transition-delay: .20s; }
+.intro-win.hidden .intro-manifesto span:nth-child(1){ transition-delay: .16s; }
+.intro-win.hidden .intro-manifesto span:nth-child(2){ transition-delay: .30s; }
+.intro-win.hidden .intro-manifesto span:nth-child(3){ transition-delay: .22s; }
+.intro-win.hidden .intro-manifesto span:nth-child(4){ transition-delay: .34s; }
+.intro-win.hidden .intro-team                      { transition-delay: .44s; }
+.intro-win.hidden .inote-tl p:nth-child(1)         { transition-delay: .04s; }
+.intro-win.hidden .inote-tl p:nth-child(2)         { transition-delay: .10s; }
+.intro-win.hidden .inote-tr p:nth-child(1)         { transition-delay: .08s; }
+.intro-win.hidden .inote-tr p:nth-child(2)         { transition-delay: .14s; }
+.intro-win.hidden .inote-bl p:nth-child(1)         { transition-delay: .26s; }
+.intro-win.hidden .inote-bl p:nth-child(2)         { transition-delay: .32s; }
+.intro-win.hidden .inote-br p:nth-child(1)         { transition-delay: .30s; }
+.intro-win.hidden .inote-br p:nth-child(2)         { transition-delay: .36s; }
+
+/* the blue field is the last to go — it fades after the content, revealing Act 2 */
+.intro-win.hidden .intro-screen { opacity: 0; transition-delay: .70s; }
+
+.intro-screen {
+  position: absolute; inset: 0; overflow: hidden;
+  background: var(--blue); color: #fff;
+  font-family: var(--font-mono);
+}
+
+/* corner margin notes — dim, low-contrast, lightly staggered */
+.inote { position: absolute; width: min(300px, 30vw); }
+.inote p { margin: 0 0 16px; font: 400 12px/1.5 var(--font-mono); color: rgba(255,255,255,.6); }
+.inote p:last-child { margin-bottom: 0; }
+.inote b { color: #fff; font-weight: 700; margin-right: 6px; letter-spacing: .5px; }
+.inote span { display: inline-block; padding-left: 1.6em; color: rgba(255,255,255,.55); }
+.inote-tl { top: 10vh; left: 3vw; }
+.inote-bl { bottom: 8vh; left: 3vw; }
+.inote-tr { top: 10vh; right: 3vw; }
+.inote-br { bottom: 8vh; right: 3vw; }
+
+/* centre column */
+.intro-center {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: min(1000px, 92vw); text-align: center;
+  display: flex; flex-direction: column; align-items: center;
+}
+.intro-eyebrow { font: 700 11px/1 var(--font-cond); letter-spacing: 5px; text-transform: uppercase; color: rgba(255,255,255,.7); margin-bottom: 6px; }
+/* title + attribution are now small and discreet — the yellow manifesto is the hero */
+.intro-headline { font: 700 clamp(13px, 1.5vw, 17px)/1.2 var(--font-mono); letter-spacing: 2px; text-transform: uppercase; color: #fff; margin: 0; }
+.intro-sub { font: 400 clamp(11px, 1.1vw, 13px)/1.4 var(--font-mono); color: rgba(255,255,255,.7); margin: 4px 0 0; }
+.intro-sub em { color: var(--yellow); font-style: italic; font-weight: 700; }
+
+/* yellow-highlighter manifesto — the hero. Big monospace marker lines whose yellow
+   boxes STICK together vertically (no gap, no vertical padding) and stagger sideways,
+   as in the reference. */
+.intro-manifesto { margin: 26px 0; display: flex; flex-direction: column; align-items: flex-start; gap: 0; }
+.intro-manifesto span {
+  background: var(--yellow); color: var(--ink);
+  font: 700 clamp(17px, 3vw, 38px)/1.32 var(--font-mono);
+  letter-spacing: .2px; text-transform: uppercase; padding: 0 .34em;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+}
+.intro-manifesto span em { font-style: italic; color: var(--blue); }
+.intro-manifesto span:nth-child(2) { margin-left: 2.1em; }
+.intro-manifesto span:nth-child(3) { margin-left: .9em; }
+.intro-manifesto span:nth-child(4) { margin-left: 1.6em; }
+
+/* team credits */
+.intro-team {
+  margin-top: 30px; display: flex; flex-wrap: wrap; justify-content: center;
+  align-items: center; gap: 8px 14px;
+  font: 700 11px/1 var(--font-cond); letter-spacing: 2px; text-transform: uppercase;
+  color: rgba(255,255,255,.82);
+}
+.intro-team b { color: var(--ink); background: var(--yellow); padding: 3px 7px; letter-spacing: 2px; }
+.intro-team span { position: relative; }
+.intro-team span + span::before { content: "·"; position: absolute; left: -9px; color: rgba(255,255,255,.45); }
+
+@media (max-width: 860px) {
+  .inote { display: none; }
+  .intro-manifesto span { margin-left: 0 !important; }
+}
 
 /* ============================================================
    CANVAS / WINDOWS / ITEMS
@@ -441,6 +539,18 @@ body[data-act="4"] #scrim { background: var(--paper); backdrop-filter: none; -we
 .winbody { flex: 1; min-height: 0; position: relative; overflow: hidden; background: var(--paper); }
 .winbody img, .winbody video { width: 100%; height: 100%; object-fit: cover; display: block; }
 
+/* Active (non-dimmed) windows breathe: their content gently auto-scrolls down, pauses,
+   then scrolls back up — a slow ping-pong pan of the cropped image. Dimmed "past"
+   windows hold still. */
+@keyframes winpan {
+  0%, 10%  { object-position: 50% 0%; }
+  50%, 60% { object-position: 50% 100%; }
+  100%     { object-position: 50% 0%; }
+}
+.item:not(.past) .winbody img,
+.item:not(.past) .winbody video { animation: winpan 14s ease-in-out infinite; }
+.item.past .winbody img, .item.past .winbody video { animation: none; }
+
 /* ── "web window" chrome for the act 1 / 3 / 4 popups ──────────────────────────
    A nod to old Windows (98 navy→blue title gradient, beveled title buttons, red
    close hover) rendered with the page's modern, light, crisp finish. Scoped to the
@@ -472,10 +582,16 @@ body[data-act="4"] #scrim { background: var(--paper); backdrop-filter: none; -we
 
 .gif-tag, .vid-tag { position: absolute; right: 4px; bottom: 4px; font: 700 8px/1 var(--font-cond); letter-spacing: .5px; background: var(--blue); color: #fff; padding: 2px 4px; }
 .type-gif .gif-tag { background: var(--magenta); }
-.textcard { padding: 10px 12px; height: 100%; overflow: auto; background: var(--paper); color: var(--ink); font: 400 14px/1.5 var(--font-mono); white-space: pre-wrap; word-break: break-word; }
+/* text windows keep a real vertical scrollbar; their copy auto-scrolls (JS, ping-pong),
+   and the moment the reader uses the scrollbar that one window's auto-scroll stops. */
+.textcard { padding: 10px 12px; height: 100%; overflow-y: auto; overflow-x: hidden; background: var(--paper); color: var(--ink); font: 400 14px/1.5 var(--font-mono); }
+.textscroll { white-space: pre-wrap; word-break: break-word; }
 .textcard::-webkit-scrollbar { width: 12px; }
 .textcard::-webkit-scrollbar-track { background: var(--paper); box-shadow: inset 0 0 0 1px var(--sh); }
-.textcard::-webkit-scrollbar-thumb { background: var(--paper); box-shadow: inset 0 0 0 1px var(--hair); }
+.textcard::-webkit-scrollbar-thumb { background: var(--face); box-shadow: inset 1px 1px 0 var(--hi), inset -1px -1px 0 var(--dsh), inset 0 0 0 1px var(--sh); }
+.textcard::-webkit-scrollbar-thumb:hover { background: var(--blue); }
+/* firefox */
+.textcard { scrollbar-width: thin; scrollbar-color: var(--dsh) var(--paper); }
 
 /* cascade "open window" clones removed — each item is a single clean window,
    no offset echo copies stacked behind it (notably the zoomed images in act 2). */
@@ -487,13 +603,16 @@ body[data-act="4"] #scrim { background: var(--paper); backdrop-filter: none; -we
 /* the folder that just snapped into place gets a thin blue marker (then settles) */
 .item.fresh .win { box-shadow: inset 0 0 0 1px var(--blue), 0 0 0 1px var(--blue); }
 
-/* PAST slides (earlier folders already placed): the window stays 100% opaque so the
-   repeating background can never show through it — only the PICTURE dims toward the white
-   window face. They read as "previous slides" but never disappear into the background. */
-.winbody img, .winbody video, .textcard { transition: opacity .6s var(--ease); }
-.item.past .winbody img, .item.past .winbody video { opacity: .4; }
-.item.past .textcard { opacity: .5; }
-.item.past .winbar { filter: saturate(.6) brightness(1.05); }
+/* PAST slides (earlier folders already placed): the WHOLE window — blue title bar
+   included — washes toward WHITE. The window stays 100% OPAQUE (no transparency): a
+   solid white veil sits over it, so nothing behind ever shows through. It reads as a
+   faded "previous slide" while remaining a solid white card. */
+.item .win { position: relative; }
+.item .win::after {
+  content: ""; position: absolute; inset: 0; z-index: 6; pointer-events: none;
+  background: #fff; opacity: 0; transition: opacity .6s var(--ease);
+}
+.item.past .win::after { opacity: .62; }
 
 /* item glitch jitter removed — windows stay still (no occasional tremor) */
 
@@ -507,7 +626,15 @@ body[data-act="4"] #scrim { background: var(--paper); backdrop-filter: none; -we
 /* ---- RATIONALIZATION ---- */
 .rationalize { position: absolute; inset: 0; z-index: 60; display: grid; place-items: center; opacity: 0; visibility: hidden; transition: opacity .6s var(--ease); pointer-events: none; padding: 5vw; background: rgba(255,255,255,.66); backdrop-filter: blur(9px); -webkit-backdrop-filter: blur(9px); }
 .rationalize.show { opacity: 1; visibility: visible; }
-.rat-win { width: min(900px, 92vw); height: auto; max-height: 86vh; }
+.rat-win { width: min(900px, 92vw); height: auto; max-height: 86vh; transform-origin: center; }
+/* the RATIONALIZED.LOG window EMERGES with a zoom (like the Act-2 focus images snapping
+   into place): it scales up from small and settles via the page's easing. */
+.rationalize.show .rat-win { animation: ratpop .62s var(--ease) both; }
+@keyframes ratpop {
+  0%   { transform: scale(.55); opacity: 0; }
+  60%  { opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
 .rat-inner { text-align: center; background: var(--paper); padding: 6vh 4vw; overflow: auto; }
 .rat-kicker { font: 700 11px/1 var(--font-cond); letter-spacing: 5px; text-transform: uppercase; color: var(--blue); margin-bottom: 22px; }
 .rat-line { font-family: var(--font-mono); font-weight: 700; font-size: clamp(18px, 3vw, 38px); line-height: 1.1; margin: 6px 0; color: var(--ink); }
@@ -517,17 +644,26 @@ body[data-act="4"] #scrim { background: var(--paper); backdrop-filter: none; -we
 /* ============================================================
    CHAT MODAL — thin blueprint dialog
    ============================================================ */
-.chat-modal { position: fixed; inset: 0; z-index: 600; display: grid; place-items: center; opacity: 0; visibility: hidden; transition: opacity .4s var(--ease); padding: 16px; background: transparent; }
+.chat-modal { position: fixed; inset: 0; z-index: 600; display: grid; place-items: center; opacity: 0; visibility: hidden; transition: opacity .6s var(--ease), visibility .6s var(--ease); padding: 16px; background: transparent; }
 .chat-modal.show { opacity: 1; visibility: visible; }
-.chat-win { width: min(680px, 96vw); max-height: 86vh; display: flex; flex-direction: column; background: var(--paper); padding: 0;
-  /* frame + soft float come from the shared .win-dialog/.chat-win/.rat-win chrome */
-  animation: popin .35s var(--ease); }
-@keyframes popin { from { transform: translateY(16px) scale(.97); opacity: 0; } }
+/* height: auto — size to content (the base .win sets height:100%, which left a tall band
+   of empty white below the form). position: relative for the complete frame overlay. */
+.chat-win { width: min(680px, 96vw); height: auto; max-height: 86vh; position: relative;
+  display: flex; flex-direction: column; background: var(--paper); padding: 0;
+  /* gentle, floating Act-4 feel: soft pop-in, then a slow continuous drift */
+  animation: popin .5s var(--ease) both, chatfloat 7s ease-in-out .5s infinite; }
+/* the thin black hairline as a TOP overlay so it stays complete all the way around
+   (the inner paper panels were painting over the shared inset border) */
+.chat-win::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; box-shadow: inset 0 0 0 1px var(--hair); }
+@keyframes popin { from { transform: translateY(18px) scale(.96); opacity: 0; } }
+@keyframes chatfloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 .winbar-chat { font-size: 10px; }
 .chat-body { background: var(--paper); padding: 16px; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
 .chat-prompt { font-family: var(--font-cond); font-weight: 700; letter-spacing: .5px; font-size: clamp(14px, 1.9vw, 18px); line-height: 1.3; text-transform: uppercase; color: var(--ink); }
-.chat-log { flex: 1; overflow: auto; display: flex; flex-direction: column; gap: 9px; min-height: 120px; max-height: 42vh; padding-right: 2px; }
-.msg { font: 400 14px/1.5 var(--font-mono); padding: 8px 11px; max-width: 92%; white-space: pre-wrap; box-shadow: inset 0 0 0 1px var(--hair); }
+.chat-log { flex: 0 1 auto; overflow: auto; display: flex; flex-direction: column; gap: 9px; min-height: 0; max-height: 42vh; padding-right: 2px; }
+.chat-log:empty { display: none; }
+.msg { font: 400 14px/1.5 var(--font-mono); padding: 8px 11px; max-width: 92%; white-space: pre-wrap; box-shadow: inset 0 0 0 1px var(--hair); animation: msgin .4s var(--ease) both; }
+@keyframes msgin { from { opacity: 0; transform: translateY(7px); } }
 .msg-you { align-self: flex-end; background: var(--blue); color: #fff; box-shadow: none; }
 .msg-bot { align-self: flex-start; background: var(--paper); color: var(--ink); box-shadow: inset 0 0 0 1px var(--blue); }
 .msg-bot .caret { animation: blink 1s steps(1) infinite; color: var(--blue); }

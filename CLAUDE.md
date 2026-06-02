@@ -17,10 +17,10 @@ rationalization screen the page is a clean, light, quiet space.
 
 | Act | Screen | Idea |
 |----|--------|------|
-| **1 — The Box** | An intro window sitting **on** the canvas (part of the collage, not a separate slide) + the Barthes line *"first a gothic cathedral, then a kitchen."* | We admire the surface; we never open it. |
-| **2 — The Messy Canvas** | Every file from `Slides_Datasets/` scattered as draggable Y2K windows. Each **NEXT** pulls the next folder (01, 02, …) into its **final place — and it stays there**. The folder that just arrived stays sharp; earlier folders **dim back** (their picture fades toward the white window, but the window stays opaque so the busy background never bleeds through). Order accumulates folder by folder; nothing already placed disappears. | The raw inside of the box, rationalized step by step. |
-| **3 — Rationalization** | A **light / white "calm" screen**: items settle softly into the ordered grid (all back to full strength), the repetitive background decor switches off, and the punch line appears in a **window** (`RATIONALIZED.LOG`). | "Order where there was chaos." The transition into calm; the human as Simondon's *permanent organizer*. |
-| **4 — The Rationalizer** | A chatbot popup on a **fully white screen** — everything behind disappears (the `#scrim` goes solid white): *"…now it is the AI's turn to answer — and your turn to think."* | Real AI answers, grounded in the live canvas content. The arrival of calm. |
+| **1 — The Box** | A **full-screen electric-blue splash** (the title page). Dim monospace margin notes `{1}`–`{8}` in the four corners carry the Act-1 ideas (incl. the Barthes line *"first a gothic cathedral, then a kitchen"*); the **hero is a yellow-highlighter manifesto** whose marker boxes stick together; a small/discreet title + attribution and the **team credits** (Rania Chihaoui · Andrea Cutroni · Eduardo Martinez · Ramon Garcia). No "open" button — advance with **NEXT** / keyboard. The canvas, decor and boot flood stay **off** during Act 1. | We admire the surface; we never open it. |
+| **2 — The Messy Canvas** | Every file from `Slides_Datasets/` scattered as draggable Y2K windows. Each **NEXT** brings the next folder up as a **centered, zoomed "hero" cluster**; on the following NEXT that folder **settles into its slot in the ordered grid** and the **whole window** (blue title bar included) washes toward an opaque **white veil** (no transparency — nothing behind shows through). Active (non-veiled) windows gently **auto-scroll** their content: images pan, text cards scroll with a real scrollbar that **stops that window's auto-scroll the moment the reader uses it**. Order accumulates folder by folder; nothing already placed disappears. | The raw inside of the box, rationalized step by step. |
+| **3 — Rationalization** | A **light / white "calm" screen**: the grid images **start exactly where Act 2 left them** (no re-settle) and then **drift gently** (each window floats with its own phase); the repetitive decor switches off, and the punch line **emerges with a zoom pop** in a window (`RATIONALIZED.LOG`). | "Order where there was chaos." The transition into calm; the human as Simondon's *permanent organizer*. |
+| **4 — The Rationalizer** | A chatbot popup whose backdrop **settles into the Act-1 blue** (the `#scrim` eases to `--blue`) — everything behind is gone. The window is sized to its content (no empty band), framed by a **complete** thin hairline, and uses **soft, floating** animations: *"…now it is the AI's turn to answer — and your turn to think."* | Real AI answers, grounded in the live canvas content. The arrival of calm — full circle to the blue. |
 
 A dial called **`--clean`** (0 → 1) rises a notch on every advance; anything multiplied by
 **`--chaos` (`= 1 − var(--clean)`)** — the repetitive background decor, smear washes, grain —
@@ -37,21 +37,25 @@ stay flat and sharp. See `.win-dialog, .chat-win, .rat-win` in `main.css`.
 
 ### Layering & arrangement (the two mechanics worth knowing)
 
-- **White backdrop (`#scrim`).** A white blurred veil lives **inside `#stage` at `z-index: 250`**.
-  It sits *behind* the hero of the moment — the intro window (z 400), the **zoomed Act-2 images**
-  (z 500) and the **chat** (z 600) — but *over* the messy / receding canvas (low z), which it
-  softly veils. `#world` uses `z-index: auto` (not a stacking context) so individual items can
-  rise above or sit below the scrim. `state.js` toggles it on for the intro, the Act-2 focus
-  steps and the chat. **At Act 4 the scrim turns solid white** (`body[data-act="4"] #scrim`),
-  so the chat sits on a completely clean white screen — everything behind is gone.
-- **Progressive accumulation (Act 2).** `canvas.js` computes every item's **final grid slot once**
-  (`gridSlots()`), shared by `focus()` and `grid()`. On each NEXT, folders already reached snap to
-  their final slot and stay (above the scrim); folders not yet reached wait scattered in the back
-  (below the scrim, veiled — never vanishing). The current folder is full strength + a `fresh`
-  marker; earlier folders get a `past` class that **dims only the picture** (`.item.past .winbody
-  img`) while the window stays **fully opaque** (`n.op = 1`) — so a placed image never goes
-  see-through and the repeating background can't bleed through it. By the last folder everything is
-  in place; Act 3 is the same grid (all back to full) with a gentle floaty settle and the decor faded out.
+- **Backdrop (`#scrim`).** A blurred veil lives **inside `#stage` at `z-index: 250`** — fairly
+  **opaque white** (`rgba(255,255,255,.82)`) so the zoomed Act-2 hero pops on a near-clean field.
+  It sits *behind* the hero of the moment — the zoomed Act-2 cluster (z 520) and the **chat**
+  (z 600) — but *over* the messy / receding canvas (low z), which it softly veils. `#world` uses
+  `z-index: auto` (not a stacking context) so items can rise above or sit below the scrim.
+  `state.js` toggles it on for the Act-2 focus steps and the chat. **At Act 4 the scrim eases to
+  the Act-1 blue** (`body[data-act="4"] #scrim { background: var(--blue) }`, with a
+  `background-color` transition), so the chat sits on a calm blue screen — full circle.
+- **Centered zoom + progressive grid (Act 2).** `canvas.js` computes every item's **final grid slot
+  once** (`gridSlots()`), shared by `focus()` and `grid()`. On each NEXT the **current** folder is a
+  **centered, zoomed hero** (`zoomCluster()` picks the column count that maximises the zoom, up to
+  ~1.85×); **earlier** folders sit in their grid slot with a `past` class; **not-yet-reached** folders
+  wait scattered in the back (below the scrim, veiled — never vanishing). `past` paints a **solid
+  white overlay over the whole window** (`.item.past .win::after`, opacity ~.62) — the window stays
+  100% opaque (no transparency, nothing behind shows). Active (`:not(.past)`) windows **auto-scroll**:
+  `img/video` pan via `object-position` (`winpan`); text via JS `scrollTop` ping-pong that stops on
+  reader input. By the last folder everything is placed; **Act 3** keeps each item exactly where it is
+  (no re-settle) and adds a continuous gentle **float** (`gridfloat`, per-item random phase `--fp`),
+  while the decor fades out and `RATIONALIZED.LOG` emerges with a zoom pop (`ratpop`).
 
 ---
 
@@ -67,6 +71,11 @@ on every request via `/api/slides`.
    - **GIFs:** `.gif`
    - **Videos:** `.mp4 .webm .mov .m4v .ogv`
    - **Text:** `.txt .md` → rendered as a terminal/notepad card (its text is read inline).
+   - ⚠️ **Use URL-safe filenames** — letters, numbers, `-` and `_` only. **Avoid spaces and
+     parentheses** (`image (11).png`): some static hosts/CDNs fail to serve those paths and the
+     tile shows *"IMAGE NOT FOUND."* `lib/scan.mjs` now percent-encodes them defensively, but
+     plain names are the reliable choice. (Also remember to **commit the image files** — an
+     uncommitted asset isn't deployed, so it 404s in production.)
 3. That's it.
    - **Local (`vercel dev`):** reload the page — it appears instantly.
    - **Production:** `git push` → Vercel redeploys and re-scans automatically.
@@ -93,9 +102,10 @@ index.html              The single page (4 acts + HUD + nav + cursor + #scrim + 
 styles/main.css         Light editorial / Y2K-chrome design system + the --clean dial
 scripts/
   glitch.js             Clean crosshair cursor (burst()/scramble() kept as no-ops)
-  canvas.js             Fetch /api/slides → scatter → progressive focus (accumulates) → grid + drag
+  canvas.js             Fetch /api/slides → scatter → centered-zoom focus (accumulates grid) → grid + drag + auto-scroll
   chatbot.js            Streaming chat UI → /api/chat
   state.js              Narrative state machine; drives --clean, the #scrim and the acts
+  flood.js              Boot "window flood" — runs only as the box opens (Act 2), never during Act 1
 api/
   slides.mjs            GET — live manifest of Slides_Datasets (scanned per request)
   chat.mjs              POST — AI answer (AI SDK + Vercel AI Gateway), context from scan
@@ -171,16 +181,17 @@ If no key is set, the page works fully and the chatbot returns a graceful in-cha
   **Archivo Black** (display), **Anton** (status words), **Saira Condensed** (system text),
   **Courier New** (mono) — loaded via Google Fonts in `index.html`.
 - **Density vs. calm:** anything multiplied by `var(--chaos)` (`= 1 - var(--clean)`) calms as the
-  user advances; the Act-3 light theme, soft item "settle" and decor fade live under
-  `body[data-act="3"]`.
-- **White backdrop / layering:** `#scrim` (inside `#stage`, `z-index: 250`) is the blurred white
-  veil behind the intro window / zoomed images / chat; toggled per step in `state.js`, and turned
-  **solid white at Act 4** so the chat sits on a clean empty screen.
+  user advances; the Act-3 light theme, the gentle item **float** (`gridfloat`) and the decor fade
+  live under `body[data-act="3"]`.
+- **Backdrop / layering:** `#scrim` (inside `#stage`, `z-index: 250`) is the blurred veil behind the
+  zoomed images / chat — tune its whiteness via `rgba(255,255,255,.82)`. Toggled per step in
+  `state.js`, and eased to **`var(--blue)` at Act 4** so the chat lands on the Act-1 blue.
 - **Popup "web window" chrome:** `.win-dialog, .chat-win, .rat-win` in `main.css` — Win98 gradient
   title bar, beveled buttons, red close-hover, soft float shadow. Act-2 canvas item windows use the
-  plain flat `.win` chrome instead.
-- **Past-slide dimming (Act 2):** `.item.past` fades the picture only (window stays opaque); tune
-  the `opacity` there. The `past`/`fresh` flags are set in `canvas.js` `focus()`.
+  plain flat `.win` chrome instead. The chat frame is completed by a `.chat-win::after` hairline overlay.
+- **Past-slide veil (Act 2):** `.item.past .win::after` is a **solid white overlay over the whole
+  window** (bar + content) — tune its `opacity`. The `past`/`fresh` flags are set in `canvas.js`
+  `focus()`; the current folder is the `zoomCluster()` hero. Act-3 float: `gridfloat` + per-item `--fp`.
 - **Folder label:** `.folder-title` — a small, centred, discreet label near the top (not a giant
   hero title).
 - **Chatbot persona / knowledge:** `buildSystem()` in `api/chat.mjs`.

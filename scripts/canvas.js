@@ -34,7 +34,8 @@
     const unit = W < 760 ? 0.6 : (W < 1100 ? 0.82 : 1);
     const w = Math.round(236 * unit);
     const heightsImg = [156, 198, 250, 312, 386];
-    const heightsTxt = [206, 262, 330];
+    // text cards are kept compact so the copy overflows and auto-scrolls (ping-pong pan)
+    const heightsTxt = [128, 152, 180];
     const arr = type === 'text' ? heightsTxt : heightsImg;
     const h = Math.round(arr[(gi * 7 + (type === 'text' ? 2 : 0)) % arr.length] * unit);
     return { w, h };
@@ -57,6 +58,7 @@
     fig.className = `item type-${item.type} glitchy`;
     fig.style.width = node.w + 'px';
     fig.style.height = node.h + 'px';
+    fig.style.setProperty('--fp', Math.random().toFixed(3));   // random float phase (Act 3 drift)
     const title = (item.type === 'text' ? (item.name || 'README.TXT') : (item.name || item.type)).toUpperCase();
 
     const win = document.createElement('div');
@@ -70,7 +72,10 @@
     if (item.type === 'text') {
       const tc = document.createElement('div');
       tc.className = 'textcard';
-      tc.textContent = item.text || '';
+      const inner = document.createElement('div');
+      inner.className = 'textscroll';
+      inner.textContent = item.text || '';
+      tc.appendChild(inner);
       body.appendChild(tc);
     } else if (item.type === 'video') {
       const v = document.createElement('video');
@@ -114,6 +119,49 @@
     if (loadState) loadState.style.display = 'none';
     scatter();
     render();
+    setupTextAutoScroll();
+  }
+
+  // Each active (non-dimmed) text window auto-scrolls its copy down, pauses, then back up
+  // (ping-pong), driven via scrollTop so the native scrollbar tracks along. The instant the
+  // reader touches THAT window's scrollbar / wheel / keys, its auto-scroll stops — only it.
+  function setupTextAutoScroll() {
+    const cards = [];
+    nodes.forEach((n) => {
+      if (n.type !== 'text' || !n.el) return;
+      const tc = n.el.querySelector('.textcard');
+      if (!tc) return;
+      const c = { tc, item: n.el, manual: false, prog: false };
+      const stop = () => { c.manual = true; };
+      tc.addEventListener('wheel', stop, { passive: true });
+      tc.addEventListener('touchstart', stop, { passive: true });
+      tc.addEventListener('keydown', stop);
+      // a scroll we did NOT cause (scrollbar drag / click) means the reader took over
+      tc.addEventListener('scroll', () => { if (c.prog) { c.prog = false; return; } c.manual = true; });
+      cards.push(c);
+    });
+    if (!cards.length) return;
+
+    const period = 16000;                 // full down+up cycle (ms)
+    const dHold = 0.08, dEnd = 0.46, uHold = 0.54;   // pauses at top/bottom
+    function frame(t) {
+      for (const c of cards) {
+        if (c.manual || c.item.classList.contains('past')) continue;   // dimmed/taken-over hold still
+        const max = c.tc.scrollHeight - c.tc.clientHeight;
+        if (max <= 1) continue;
+        const ph = (t % period) / period;
+        let p;
+        if (ph < dHold) p = 0;
+        else if (ph < dEnd) p = (ph - dHold) / (dEnd - dHold);
+        else if (ph < uHold) p = 1;
+        else p = 1 - (ph - uHold) / (1 - uHold);
+        const e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;   // ease in-out
+        const target = Math.round(e * max);
+        if (target !== Math.round(c.tc.scrollTop)) { c.prog = true; c.tc.scrollTop = target; }
+      }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
   }
 
   /* ---------- layouts (all upright: rot = 0) ---------- */
@@ -163,23 +211,57 @@
     });
   }
 
-  // Progressive arrangement: folders already reached snap into their final grid slot
-  // and STAY there; folders not yet reached wait in the scattered back canvas (kept
-  // below the white scrim so they read as softly veiled — never vanishing).
+  // Current folder shown as a centered, ZOOMED "hero" cluster (above the scrim). Sets
+  // position/scale only; flags are set by focus(). Rows are individually centred so a
+  // short final row stays balanced under the ones above it.
+  function zoomCluster(list) {
+    const m = list.length;
+    if (!m) return;
+    const cellW = Math.max.apply(null, list.map((n) => n.w));
+    const cellH = Math.max.apply(null, list.map((n) => n.h));
+    const gap = 24;
+    // pick the column count that lets the cluster ZOOM the most while still fitting,
+    // so the current folder reads as an enlarged, centered hero (not a shrunk grid)
+    let cols = 1, s = 0;
+    for (let c = 1; c <= m; c++) {
+      const r = Math.ceil(m / c);
+      const gw = c * cellW + (c - 1) * gap;
+      const gh = r * cellH + (r - 1) * gap;
+      const fit = Math.min(1.85, (W * 0.8) / gw, (H * 0.8) / gh);
+      if (fit > s) { s = fit; cols = c; }
+    }
+    const rows = Math.ceil(m / cols);
+    const gridH = rows * cellH + (rows - 1) * gap;
+    const offY = (H - gridH * s) / 2;
+    list.forEach((n, i) => {
+      const c = i % cols;
+      const r = (i / cols) | 0;
+      const inRow = Math.min(cols, m - r * cols);
+      const rowW = inRow * cellW + (inRow - 1) * gap;
+      const rowOffX = (W - rowW * s) / 2;
+      n.x = rowOffX + (c * (cellW + gap) + cellW / 2) * s;
+      n.y = offY + (r * (cellH + gap) + cellH / 2) * s;
+      n.scale = s;
+    });
+  }
+
+  // Progressive arrangement: the CURRENT folder is a centered zoom (hero); folders already
+  // passed settle into their final ordered-grid slot and STAY there; folders not yet
+  // reached wait scattered in the back canvas (below the white scrim — softly veiled).
   function focus(fo) {
     gridSlots();
+    zoomCluster(nodes.filter((n) => n.folder === fo));
     nodes.forEach((n) => {
-      if (n.folder <= fo) {
-        const current = n.folder === fo;
-        n.x = n.gx; n.y = n.gy; n.scale = n.gs;
-        n.rot = 0; n.blur = 0;
-        n.op = 1;                             // window stays FULLY OPAQUE — never see-through,
-                                              // so the repeating background can never bleed through it
-        n.past = !current;                    // earlier slides read "dimmed" via content fade (CSS), not transparency
-        n.z = current ? 520 : 500;            // above the scrim (z 250): sharp, placed
-        n.glitchy = false;
-        n.fresh = current;                    // highlight the folder that just arrived
-        n.delay = current ? 0.05 : 0;
+      if (n.folder === fo) {
+        // current: centered zoom (position/scale set above) — only flags here
+        n.rot = 0; n.blur = 0; n.op = 1;
+        n.past = false; n.fresh = true;       // sharp, highlighted hero
+        n.z = 520; n.glitchy = false; n.delay = 0.05;
+      } else if (n.folder < fo) {
+        n.x = n.gx; n.y = n.gy; n.scale = n.gs;   // earlier folders settle into the ordered grid
+        n.rot = 0; n.blur = 0; n.op = 1;
+        n.past = true; n.fresh = false;       // white-veiled "previous slide" (still opaque)
+        n.z = 500; n.glitchy = false; n.delay = 0;
       } else {
         n.x = n.sx; n.y = n.sy; n.scale = 1;
         n.rot = 0; n.op = 1; n.blur = 0;
