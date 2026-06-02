@@ -9,6 +9,7 @@
     "snapshot": "node tools/build-slides.mjs"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^2.0.80",
     "ai": "^5.0.0"
   },
   "devDependencies": {

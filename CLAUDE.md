@@ -162,11 +162,16 @@ vercel dev           # run vercel dev DIRECTLY
 
 1. Push this repo to GitHub.
 2. Import it in Vercel (Framework preset: **Other** — zero config; `vercel.json` does the rest).
-3. Add an environment variable for the chatbot:
-   - **`AI_GATEWAY_API_KEY`** — from the Vercel AI Gateway. (On Vercel, OIDC may auth
-     automatically, but setting the key is the reliable path.)
-   - Optional: **`CHAT_MODEL`** — defaults to `anthropic/claude-haiku-4-5`. Any model
-     string the AI Gateway supports works (e.g. `anthropic/claude-opus-4-8`).
+3. Add an environment variable for the chatbot — **either** works (`api/chat.mjs` picks
+   whichever is present):
+   - **`ANTHROPIC_API_KEY`** — a normal Anthropic key (`sk-ant-…`); talks to Anthropic
+     **directly** via `@ai-sdk/anthropic`. Simplest if you already have an Anthropic key.
+   - **`AI_GATEWAY_API_KEY`** — a **Vercel AI Gateway** key (not an Anthropic key); routes the
+     `provider/model` string through the Gateway. (On Vercel, OIDC may auth automatically.)
+   - Optional: **`CHAT_MODEL`** — defaults to `anthropic/claude-haiku-4-5` (the `anthropic/`
+     prefix is stripped automatically for the direct path). e.g. `anthropic/claude-opus-4-8`.
+   - ⚠️ **Env-var changes only take effect after a redeploy** (Vercel → Deployments → Redeploy,
+     or push a new commit). Setting the key without redeploying is the usual "key doesn't work."
 4. Deploy. Future content changes = `git push`.
 
 If no key is set, the page works fully and the chatbot returns a graceful in-character

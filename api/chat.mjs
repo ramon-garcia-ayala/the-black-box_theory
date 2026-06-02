@@ -2,9 +2,21 @@
 // System context is rebuilt from the LIVE canvas scan, so the AI knows every idea
 // the user adds to Slides_Datasets.
 import { streamText } from 'ai';
+import { createAnthropic } from '@ai-sdk/anthropic';
 import { scanSlides, summarize } from '../lib/scan.mjs';
 
 const MODEL = process.env.CHAT_MODEL || 'anthropic/claude-haiku-4-5';
+
+// Resolve the model from whatever credential is available:
+//  • ANTHROPIC_API_KEY  -> talk to Anthropic DIRECTLY (a normal sk-ant-… key)
+//  • AI_GATEWAY_API_KEY / OIDC -> route the "provider/model" string via the Vercel AI Gateway
+function resolveModel() {
+  if (process.env.ANTHROPIC_API_KEY) {
+    const anthropic = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    return anthropic(MODEL.replace(/^anthropic\//, '')); // e.g. "claude-haiku-4-5"
+  }
+  return MODEL; // gateway string
+}
 
 function buildSystem(context) {
   return `You are THE BLACK BOX — an interactive oracle for a theory class on Gilbert Simondon's politics of technology, framed by Henning Schmidgen's essay "Inside the Black Box."
@@ -36,11 +48,12 @@ export default async function handler(req, res) {
     const messages = Array.isArray(body.messages) ? body.messages : [];
 
     // No credentials -> graceful, in-character fallback (page still works without AI).
-    if (!process.env.AI_GATEWAY_API_KEY && !process.env.VERCEL_OIDC_TOKEN) {
+    if (!process.env.ANTHROPIC_API_KEY && !process.env.AI_GATEWAY_API_KEY && !process.env.VERCEL_OIDC_TOKEN) {
       res.statusCode = 200;
       res.setHeader('Content-Type', 'text/plain; charset=utf-8');
       res.end(
-        '// SIGNAL LOST // The AI core is offline. Set AI_GATEWAY_API_KEY to wake the Black Box. ' +
+        '// SIGNAL LOST // The AI core is offline. Set ANTHROPIC_API_KEY (direct) or ' +
+          'AI_GATEWAY_API_KEY (Vercel AI Gateway) to wake the Black Box — then redeploy. ' +
           'Until then, the rationalizer thinks alone — which, Simondon might say, is the point.'
       );
       return;
@@ -50,16 +63,19 @@ export default async function handler(req, res) {
     const context = summarize(slides);
 
     const result = streamText({
-      model: MODEL,
+      model: resolveModel(),
       system: buildSystem(context),
       messages,
       temperature: 0.85,
+      // surface auth/model errors as readable text in the chat instead of a dead stream
+      onError: ({ error }) => console.error('[chat] stream error:', error),
     });
 
     result.pipeTextStreamToResponse(res);
   } catch (e) {
     res.statusCode = 500;
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.end(JSON.stringify({ error: String((e && e.message) || e) }));
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.end('// SIGNAL LOST // ' + String((e && e.message) || e) +
+      '\n(Check the API key: ANTHROPIC_API_KEY or AI_GATEWAY_API_KEY, and redeploy.)');
   }
 }
