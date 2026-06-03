@@ -1,9 +1,11 @@
-/* state.js — the narrative state machine (5 acts).
-   step model (M = folders in the current scope; M == N for the full run):
-     0 intro | 1 INDEX | 2 messy | 3..2+M focus | 3+M rationalized | 4+M chat
-   Act 2 is the INDEX graph: pressing NEXT there runs ALL groups; clicking a group node
-   (Present.pickGroup) scopes the run to that one group, which shrinks M.
-   It also turns the --clean dial up a notch on every advance, de-glitching toward calm. */
+/* state.js — the narrative state machine (5 acts), driven by an explicit SEQUENCE.
+   After the index, the run walks the groups in order: each group enters its own messy
+   canvas with a zoom-in (only that group's assets on screen), then steps through its
+   folders; once every group has played, ALL items assemble into one ordered grid
+   (by group + slide, coloured per group) where the final phrase appears; then the chat.
+
+   Sequence of stops:  intro · index · [ per group: messy, focus×K ] · grid(all) · chat
+   The --clean dial rises every advance, de-glitching toward calm. */
 (function () {
   const body = document.body;
   const openBtn = document.getElementById('openBtn');
@@ -18,30 +20,38 @@
   const chatClose = document.getElementById('chatClose');
   const rationalize = document.getElementById('rationalize');
 
-  let N = 0;          // total folders
-  let M = 0;          // folders in current scope (group pick) — equals N for the full run
+  let seq = [];        // ordered list of stops (see buildSequence)
   let step = 0;
   let total = 0;
-  let selectedGroup = null;
+  let N = 0;
 
-  function recompute() {
-    N = Canvas.count();
-    M = Canvas.scopeFolderCount();
-    total = M + 4;
+  function foldersOfGroup(g) {
+    const out = [];
+    Canvas.slides().forEach((s, fi) => { if ((s.group || 0) === g) out.push(fi); });
+    return out;          // global folder indices, in narrative order
   }
 
-  function phase(s) {
-    if (s === 0) return { act: 1, name: 'THE BOX' };
-    if (s === 1) return { act: 2, name: 'THE INDEX' };
-    if (s === 2) return { act: 3, name: 'THE MESSY CANVAS' };
-    if (s >= 3 && s <= M + 2) return { act: 3, name: 'RATIONALIZING' };
-    if (s === M + 3) return { act: 4, name: 'RATIONALIZED' };
-    return { act: 5, name: 'THE RATIONALIZER' };
+  // Build the full stop list once the canvas data is known.
+  function buildSequence() {
+    N = Canvas.count();
+    seq = [];
+    seq.push({ act: 1, name: 'THE BOX', kind: 'intro' });
+    seq.push({ act: 2, name: 'THE INDEX', kind: 'index' });
+    Canvas.groupsPresent().forEach((g) => {
+      const folders = foldersOfGroup(g);
+      if (!folders.length) return;
+      seq.push({ act: 3, name: 'THE MESSY CANVAS', kind: 'messy', group: g, count: folders.length });
+      folders.forEach((fi, li) => {
+        seq.push({ act: 3, name: 'RATIONALIZING', kind: 'focus', group: g, localIdx: li, folder: fi, count: folders.length });
+      });
+    });
+    seq.push({ act: 4, name: 'RATIONALIZED', kind: 'grid' });     // all groups, one ordered grid + the punch line
+    seq.push({ act: 5, name: 'THE RATIONALIZER', kind: 'chat' });
+    total = seq.length - 1;
   }
 
   function setClean() {
-    const c = total > 0 ? step / total : 0;
-    body.style.setProperty('--clean', c.toFixed(3));
+    body.style.setProperty('--clean', (total > 0 ? step / total : 0).toFixed(3));
   }
 
   function buildProgress() {
@@ -59,48 +69,49 @@
     });
   }
 
-  function apply() {
-    const p = phase(step);
+  function apply(forward) {
+    const p = seq[step];
     body.dataset.step = String(step);
     body.dataset.act = String(p.act);
     actLabel.textContent = `ACT ${p.act} / 5 · ${p.name}`;
     setClean();
 
-    introWin.classList.toggle('hidden', step !== 0);
+    introWin.classList.toggle('hidden', p.kind !== 'intro');
+    if (window.IndexGraph) { if (p.kind === 'index') IndexGraph.show(); else IndexGraph.hide(); }
+    // the group-coloured canvas graph shows on the messy / focus / final-grid stops
+    if (Canvas.edges) Canvas.edges(p.kind === 'messy' || p.kind === 'focus' || p.kind === 'grid');
 
-    // ACT 2 — the index graph (its own opaque white overlay)
-    if (window.IndexGraph) { if (step === 1) IndexGraph.show(); else IndexGraph.hide(); }
+    // the blurred backdrop only behind the intro splash, the zoomed focus hero, and the chat
+    if (scrim) scrim.classList.toggle('show', p.kind === 'intro' || p.kind === 'focus' || p.kind === 'chat');
 
-    // white blurred backdrop behind the intro popup, the focus/zoom, and the chat
-    // (never on the index — it has its own field — nor on the messy/rationalized acts)
-    if (scrim) scrim.classList.toggle('show', step === 0 || (step >= 3 && step <= M + 2) || step === M + 4);
-
-    if (step <= 2) {
-      Canvas.scatterView();
-      if (step === 0) folderLabel.textContent = 'SYS://READY';
-      else if (step === 1) folderLabel.textContent = `INDEX // ${N} SLIDE${N === 1 ? '' : 'S'}`;
-      else folderLabel.textContent = selectedGroup
-        ? `GROUP ${String(selectedGroup).padStart(2, '0')} // ${M} SLIDE${M === 1 ? '' : 'S'}`
-        : `RAW // ${N} FOLDER${N === 1 ? '' : 'S'}`;
-    } else if (step >= 3 && step <= M + 2) {
-      const localIdx = step - 3;
-      Canvas.focusView(localIdx);
-      const s = Canvas.scopeSlides()[localIdx];
+    if (p.kind === 'intro') {
+      Canvas.setScope(null); Canvas.scatterView();
+      folderLabel.textContent = 'SYS://READY';
+    } else if (p.kind === 'index') {
+      Canvas.setScope(null);
+      folderLabel.textContent = `INDEX // ${N} SLIDE${N === 1 ? '' : 'S'}`;
+    } else if (p.kind === 'messy') {
+      Canvas.setScope(p.group);
+      if (forward) Canvas.scatterZoomView(); else Canvas.scatterView();   // zoom-in entrance going forward
+      folderLabel.textContent = `GROUP ${String(p.group).padStart(2, '0')} // ${p.count} SLIDE${p.count === 1 ? '' : 'S'}`;
+    } else if (p.kind === 'focus') {
+      Canvas.setScope(p.group);
+      Canvas.focusView(p.localIdx);
+      const s = Canvas.slides()[p.folder];
       const idx = s ? String(s.index).padStart(2, '0') : '--';
-      const tag = selectedGroup ? `G${selectedGroup}·${idx}` : idx;
-      folderLabel.textContent = `FOLDER ${tag} / ${M}`;
-    } else if (step === M + 3) {
-      Canvas.gridView();
+      folderLabel.textContent = `G${p.group}·${idx} / ${p.count}`;
+    } else if (p.kind === 'grid') {
+      Canvas.setScope(null); Canvas.gridView();      // ALL groups assemble, ordered + coloured
       folderLabel.textContent = 'ORDER // COMPLETE';
     } else {
-      Canvas.gridView();
+      Canvas.setScope(null); Canvas.gridView();
       folderLabel.textContent = 'AWAITING_INPUT';
     }
 
-    rationalize.classList.toggle('show', step === M + 3);
-    rationalize.setAttribute('aria-hidden', step === M + 3 ? 'false' : 'true');
+    rationalize.classList.toggle('show', p.kind === 'grid');
+    rationalize.setAttribute('aria-hidden', p.kind === 'grid' ? 'false' : 'true');
 
-    const chatOpen = step === M + 4;
+    const chatOpen = p.kind === 'chat';
     if (chatModal) {
       chatModal.classList.toggle('show', chatOpen);
       chatModal.setAttribute('aria-hidden', chatOpen ? 'false' : 'true');
@@ -109,44 +120,31 @@
 
     prevBtn.disabled = step === 0;
     nextBtn.disabled = step >= total;
+    const nextStop = seq[step + 1];
     nextBtn.textContent =
       step >= total ? 'END'
-        : step === 1 ? 'ALL GROUPS ▸'
-          : step === M + 2 ? 'RATIONALIZE ▸'
-            : step === M + 3 ? 'ASK ▸'
+        : p.kind === 'index' ? 'ENTER ▸'
+          : (nextStop && nextStop.kind === 'grid') ? 'RATIONALIZE ▸'
+            : p.kind === 'grid' ? 'ASK ▸'
               : 'NEXT ▸';
 
     paintProgress();
     if (window.Glitch && Glitch.burst) Glitch.burst();
   }
 
-  // Stepping back to the intro/index clears any group scope so the full set returns.
-  function clearScopeIfBackToTop(s) {
-    if (s <= 1 && selectedGroup != null) {
-      selectedGroup = null;
-      Canvas.setScope(null);
-      recompute();
-      buildProgress();
-    }
-  }
-
   function go(s) {
     s = Math.max(0, Math.min(total, s));
-    clearScopeIfBackToTop(s);
-    step = Math.max(0, Math.min(total, s));
-    apply();
+    const forward = s > step;
+    step = s;
+    apply(forward);
   }
   function next() { if (step < total) go(step + 1); }
   function prev() { if (step > 0) go(step - 1); }
 
-  // Called from the index graph: scope the whole run to one group and dive straight in.
+  // From the index graph: jump straight to a chosen group's messy canvas (then its run).
   function pickGroup(g) {
-    selectedGroup = (g == null ? null : Number(g));
-    Canvas.setScope(selectedGroup);
-    recompute();
-    buildProgress();
-    step = 2;            // straight into that group's messy canvas
-    apply();
+    const idx = seq.findIndex((p) => p.kind === 'messy' && p.group === Number(g));
+    if (idx >= 0) go(idx);
   }
   window.Present = { pickGroup, next, prev };
 
@@ -164,17 +162,17 @@
   let rsz;
   window.addEventListener('resize', () => {
     clearTimeout(rsz);
-    rsz = setTimeout(() => { if (step >= 2) apply(); }, 180);
+    rsz = setTimeout(() => { if (seq[step] && seq[step].kind !== 'intro' && seq[step].kind !== 'index') apply(false); }, 180);
   });
 
   function boot() {
     Canvas.load().then(() => {
-      recompute();
+      buildSequence();
       buildProgress();
       document.querySelectorAll('.display').forEach((el) => {
         if (window.Glitch && Glitch.scramble) Glitch.scramble(el, 850);
       });
-      apply();
+      apply(false);
     });
   }
 

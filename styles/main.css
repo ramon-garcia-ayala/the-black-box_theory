@@ -523,6 +523,11 @@ body[data-step="0"] .fx-scanlines { display: none !important; }
    their own z (focused 500 above #scrim 250, receding 1 below it) within the stage context. */
 .world { position: absolute; inset: 0; z-index: auto; }
 
+/* group-coloured connection graph behind the canvas windows (Act 3 / 4). Stroke colour is
+   set per line in canvas.js; sits below every window (z 0) and its lines follow them live. */
+.world-edges { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; overflow: visible; }
+.world-edge { stroke-width: 1.4; opacity: .5; }
+
 .load-state { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font: 700 18px/1 var(--font-cond); letter-spacing: 2px; text-transform: uppercase; color: var(--blue); z-index: 5; }
 .blink { animation: blink 1s steps(1) infinite; }
 @keyframes blink { 50% { opacity: 0; } }

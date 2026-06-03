@@ -18,6 +18,14 @@
   let H = 0;
   let scopeGroup = null;          // null = all groups (full run); else present only this group
 
+  // group-coloured connection graph (mirrors the Act-2 index; edges follow the windows)
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  let edgesSvg = null, edgePairs = [], edgesOn = false, edgeRAF = 0;
+  function groupColor(g) {
+    const v = g ? getComputedStyle(document.documentElement).getPropertyValue('--grp-' + g).trim() : '';
+    return v || '#9aa3bd';
+  }
+
   /* ---------- helpers ---------- */
   function rng(seed) {
     let a = seed >>> 0;
@@ -132,7 +140,13 @@
   function build() {
     world.innerHTML = '';
     nodes = [];
+    edgePairs = [];
     measure();
+    // edge layer sits behind the windows (z 0); lines drawn in updateEdges()
+    edgesSvg = document.createElementNS(SVGNS, 'svg');
+    edgesSvg.setAttribute('class', 'world-edges');
+    edgesSvg.style.display = 'none';
+    world.appendChild(edgesSvg);
     let gi = 0;
     slides.forEach((s, fi) => {
       (s.items || []).forEach((item, ii) => {
@@ -142,10 +156,57 @@
         nodes.push(node);
       });
     });
+    buildEdges();
     if (loadState) loadState.style.display = 'none';
     scatter();
     render();
     setupTextAutoScroll();
+  }
+
+  /* ---------- group-coloured connection graph (Act 3 / 4) ----------
+     Each group's windows are linked (chain + skip-one) by a line in the group's colour.
+     The lines live in an SVG behind the windows and follow their live screen positions
+     every frame while shown, so the canvas reads as a graph just like the Act-2 index. */
+  function buildEdges() {
+    const byGroup = new Map();
+    nodes.forEach((n) => { const g = n.group || 0; if (!byGroup.has(g)) byGroup.set(g, []); byGroup.get(g).push(n); });
+    for (const [g, arr] of byGroup) {
+      const col = groupColor(g);
+      for (let i = 0; i < arr.length; i++) {
+        if (i + 1 < arr.length) addEdge(arr[i], arr[i + 1], col);
+        if (i + 2 < arr.length) addEdge(arr[i], arr[i + 2], col);
+      }
+    }
+  }
+  function addEdge(a, b, col) {
+    const line = document.createElementNS(SVGNS, 'line');
+    line.setAttribute('class', 'world-edge');
+    line.style.stroke = col;
+    edgesSvg.appendChild(line);
+    edgePairs.push({ a, b, line });
+  }
+  function updateEdges() {
+    if (!edgesSvg) return;
+    const wr = edgesSvg.getBoundingClientRect();
+    for (const e of edgePairs) {
+      if (e.a.hidden || e.b.hidden || !e.a.el || !e.b.el) { e.line.style.opacity = '0'; continue; }
+      const ra = e.a.el.getBoundingClientRect(), rb = e.b.el.getBoundingClientRect();
+      e.line.setAttribute('x1', (ra.left + ra.width / 2 - wr.left).toFixed(1));
+      e.line.setAttribute('y1', (ra.top + ra.height / 2 - wr.top).toFixed(1));
+      e.line.setAttribute('x2', (rb.left + rb.width / 2 - wr.left).toFixed(1));
+      e.line.setAttribute('y2', (rb.top + rb.height / 2 - wr.top).toFixed(1));
+      e.line.style.opacity = '';
+    }
+  }
+  function edgeLoop() {
+    if (!edgesOn) { edgeRAF = 0; return; }
+    updateEdges();
+    edgeRAF = requestAnimationFrame(edgeLoop);
+  }
+  function setEdges(on) {
+    edgesOn = !!on;
+    if (edgesSvg) edgesSvg.style.display = on ? '' : 'none';
+    if (on && !edgeRAF) edgeRAF = requestAnimationFrame(edgeLoop);
   }
 
   // Each active (non-dimmed) text window auto-scrolls its copy down, pauses, then back up
@@ -347,6 +408,31 @@
     });
   }
 
+  // Zoom-in entrance for a group's messy canvas: each in-scope item starts tiny + transparent
+  // exactly where it will land, then zooms up to full size (staggered) — the group "places
+  // itself on the screen". Out-of-scope items fade away. Used entering Act 3 / each group.
+  function scatterZoom() {
+    measure();
+    scatter();          // compute scattered targets for in-scope; hide the rest
+    render();           // commit z-index / classes / out-of-scope fade-out
+    nodes.forEach((n) => {
+      const el = n.el;
+      if (!el || n.hidden) return;
+      el.style.transition = 'none';
+      el.style.opacity = '0';
+      el.style.transform = `translate(${n.x}px, ${n.y}px) translate(-50%, -50%) scale(0.12)`;
+    });
+    void world.offsetWidth;   // commit the tiny start state before animating
+    nodes.forEach((n) => {
+      const el = n.el;
+      if (!el || n.hidden) return;
+      el.style.transition = '';
+      el.style.setProperty('--d', (Math.random() * 0.28).toFixed(2) + 's');   // gentle stagger
+      el.style.opacity = n.op;
+      el.style.transform = `translate(${n.x}px, ${n.y}px) translate(-50%, -50%) scale(${n.scale})`;
+    });
+  }
+
   /* ---------- folder title ---------- */
   function showFolderTitle(fo) {
     const s = slides[fo];
@@ -417,7 +503,9 @@
       slides.forEach((s) => { const g = s.group || 0; if (!seen.has(g)) { seen.add(g); out.push(g); } });
       return out;
     },
+    edges(on) { setEdges(on); },
     scatterView() { measure(); scatter(); render(); hideFolderTitle(); },
+    scatterZoomView() { scatterZoom(); hideFolderTitle(); },
     focusView(localIdx) { measure(); focus(localIdx); render(); },
     gridView() { measure(); grid(); render(); }
   };

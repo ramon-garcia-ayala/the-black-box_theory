@@ -18,13 +18,15 @@ rationalization screen the page is a clean, light, quiet space.
 | Act | Screen | Idea |
 |----|--------|------|
 | **1 — The Box** | A **full-screen electric-blue splash** (the title page). Dim monospace margin notes `{1}`–`{8}` in the four corners carry the Act-1 ideas (incl. the Barthes line *"first a gothic cathedral, then a kitchen"*); the **hero is a yellow-highlighter manifesto** whose marker boxes stick together; a small/discreet title + attribution and the **team credits** (Rania Chihaoui · Andrea Cutroni · Eduardo Martinez · Ramon Garcia). No "open" button — advance with **NEXT** / keyboard. The canvas, decor and boot flood stay **off** during Act 1. | We admire the surface; we never open it. |
-| **2 — The Index** | A **force-directed graph on a clean white field** of **every** item in every folder (`scripts/graph.js`). Nodes are thumbnails (text → a 2-letter card) **coloured + clustered by group** (the `gNN_MM_*` group palette), linked by thin grey edges into one organism; everything **floats gently**. **Hovering** a node *isolates its whole group* — the other groups dim/grey out. **Clicking** a node (or a legend entry) **scopes the whole rest of the run to that group only** (`Present.pickGroup`); pressing **NEXT** instead (`ALL GROUPS ▸`) runs every group. | A map of the inside before we open it — pick a thread to pull. |
-| **3 — The Messy Canvas** | The files of the chosen scope (one group, or all) scattered as draggable Y2K windows. Each **NEXT** brings the next folder up as a **centered, zoomed "hero" cluster**; on the following NEXT that folder **settles into its slot in the ordered grid** and the **whole window** (title bar included) washes toward an opaque **white veil**. Active windows gently **auto-scroll** their content; order accumulates folder by folder. | The raw inside of the box, rationalized step by step. |
-| **4 — Rationalization** | A **light / white "calm" screen**: the grid images **start exactly where Act 3 left them** (no re-settle) and then **drift gently** (each window floats with its own phase); the repetitive decor switches off, and the punch line **emerges with a zoom pop** in a window (`RATIONALIZED.LOG`). | "Order where there was chaos." The human as Simondon's *permanent organizer*. |
+| **2 — The Index** | A **force-directed graph on a clean white field** of **every** item in every folder (`scripts/graph.js`), each wearing the Act-3 "web window" chrome (title bar tinted by its group; text items use the Act-3 card). Groups are **mixed into one chaotic blob** yet **hovering** any node *isolates its whole group* (the rest dims). **Wheel-zoom + right/middle-drag pan** (Rhino-style). Pressing **NEXT** (`ENTER ▸`) walks the groups **in order** (1, then 2, …); **clicking** a node (or legend) jumps straight to that group (`Present.pickGroup`). | A map of the inside before we open it — pick a thread to pull. |
+| **3 — The Messy Canvas (per group)** | The run plays **one group at a time**. Entering a group, **only that group's assets** appear with a **zoom-in entrance** (`scatterZoomView` — each item zooms into place; nothing from another group is in the background). Each **NEXT** brings the next folder up as a **centered, zoomed "hero"**; earlier folders settle into that group's ordered grid (white-veiled). When a group ends, the next group zooms in. | The raw inside of the box, opened group by group. |
+| **4 — Rationalization (all assembled)** | After every group has played, **ALL items assemble into one ordered grid** — by **group then slide**, headers **coloured per group** — and the punch line **emerges** in a window (`RATIONALIZED.LOG`). | "Order where there was chaos." Everything finally in its place. |
 | **5 — The Rationalizer** | A chatbot popup whose backdrop **settles into the Act-1 blue** (the `#scrim` eases to `--blue`) — everything behind is gone. Soft, floating animations: *"…now it is the AI's turn to answer — and your turn to think."* | Real AI answers, grounded in the live canvas + the source papers. Full circle to the blue. |
 
-> **Step model** (`state.js`): `0 intro · 1 INDEX · 2 messy · 3..2+M focus · 3+M rationalized · 4+M chat`,
-> where **M** is the number of folders in the current scope (a picked group shrinks M; the full run has M = N).
+> **Step model** (`state.js`): a built **sequence** of stops —
+> `intro · index · [per group: messy, focus×K] · grid(all) · chat`. The grid step drops the
+> group scope so **every** item appears, ordered by group + slide. `Present.pickGroup(g)` jumps
+> to a group's messy stop; advancing past the last group reaches the assembled grid + punch line.
 
 A dial called **`--clean`** (0 → 1) rises a notch on every advance; anything multiplied by
 **`--chaos` (`= 1 − var(--clean)`)** — the repetitive background decor, smear washes, grain —
@@ -129,7 +131,7 @@ index.html              The single page (4 acts + HUD + nav + cursor + #scrim + 
 styles/main.css         Light editorial / Y2K-chrome design system + the --clean dial
 scripts/
   glitch.js             Clean crosshair cursor (burst()/scramble() kept as no-ops)
-  canvas.js             Fetch /api/slides → scatter → centered-zoom focus (accumulates grid) → grid + drag + auto-scroll + group scope
+  canvas.js             Fetch /api/slides → scatter / zoom-in entrance → centered-zoom focus (per-group grid) → final grid + drag + auto-scroll + group scope
   graph.js              Act 2 "THE INDEX" — force-directed graph of all items, grouped by colour; hover isolates a group, click scopes the run
   chatbot.js            Streaming chat UI → /api/chat
   state.js              Narrative state machine; drives --clean, the #scrim and the acts

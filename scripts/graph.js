@@ -25,13 +25,29 @@
   function colorFor(g) { return (g && rootVar('--grp-' + g)) || '#9aa3bd'; }
   function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
   const dist2 = (a, b) => { const dx = a.bx - b.bx, dy = a.by - b.by; return dx * dx + dy * dy; };
+  const BAR = 19;   // .winbar height — the window chrome's title bar
+
+  // Match an image/video window to its media's ORIGINAL orientation, snapping to one of three
+  // predominant shapes: horizontal, vertical or square (body sized from the node's base unit
+  // n.u; the title bar adds BAR on top). Runs once the media's real dimensions are known.
+  function applyShape(n, natW, natH) {
+    if (!n || !natW || !natH) return;
+    const u = n.u, ratio = natW / natH;
+    let bw, bh;
+    if (ratio >= 1.18) { bw = u; bh = Math.round(u * 0.62); }          // horizontal
+    else if (ratio <= 0.85) { bw = Math.round(u * 0.62); bh = u; }     // vertical
+    else { bw = Math.round(u * 0.82); bh = Math.round(u * 0.82); }     // square
+    n.w = bw; n.h = bh + BAR; n.r = Math.max(n.w, n.h) / 2;
+    if (n.el) { n.el.style.width = n.w + 'px'; n.el.style.height = n.h + 'px'; }
+  }
 
   /* ---------- build nodes from the live canvas data ---------- */
   function makeNode(it, g, s) {
     const isText = it.type === 'text';
-    // varied window sizes (text windows a touch larger so the copy reads) — variety adds chaos
-    const w = isText ? 124 + ((Math.random() * 48) | 0) : 82 + ((Math.random() * 54) | 0);
-    const h = isText ? 96 + ((Math.random() * 46) | 0) : 64 + ((Math.random() * 52) | 0);
+    const u = 92 + ((Math.random() * 46) | 0);          // media "long side" base unit (variety)
+    // placeholder size: text → roomy card; image/video → square until its real orientation loads
+    const w = isText ? 124 + ((Math.random() * 48) | 0) : Math.round(u * 0.82);
+    const h = isText ? 96 + ((Math.random() * 46) | 0) : Math.round(u * 0.82) + BAR;
 
     const el = document.createElement('button');
     el.type = 'button';
@@ -51,6 +67,7 @@
     const body = document.createElement('div');
     body.className = 'winbody';
 
+    let media = null;
     if (isText) {
       const tc = document.createElement('div');
       tc.className = 'textcard';
@@ -64,11 +81,13 @@
       v.src = it.src; v.muted = true; v.loop = true; v.autoplay = true; v.playsInline = true;
       v.setAttribute('playsinline', '');
       body.appendChild(v);
+      media = v;
     } else {
       const img = document.createElement('img');
       img.src = it.src; img.alt = ''; img.loading = 'lazy'; img.decoding = 'async';
       img.addEventListener('error', () => { el.classList.add('idx-broken'); });
       body.appendChild(img);
+      media = img;
     }
     win.appendChild(bar); win.appendChild(body); el.appendChild(win);
 
@@ -79,7 +98,17 @@
     el.addEventListener('blur', () => highlight(null));
     el.addEventListener('click', () => pick(g));
     layer.appendChild(el);
-    return { el, group: g, w, h, r: Math.max(w, h) / 2, bx: 0, by: 0, fx: 0, fy: 0, ph: Math.random() * Math.PI * 2, amp: 3 + Math.random() * 5, sp: 0.4 + Math.random() * 0.6 };
+
+    const n = { el, group: g, u, w, h, r: Math.max(w, h) / 2, bx: 0, by: 0, fx: 0, fy: 0, ph: Math.random() * Math.PI * 2, amp: 3 + Math.random() * 5, sp: 0.4 + Math.random() * 0.6 };
+
+    // give each image/video window its media's ORIGINAL orientation once dimensions are known
+    if (media && it.type === 'video') {
+      media.addEventListener('loadedmetadata', () => applyShape(n, media.videoWidth, media.videoHeight));
+    } else if (media) {
+      media.addEventListener('load', () => applyShape(n, media.naturalWidth, media.naturalHeight));
+      if (media.complete && media.naturalWidth) applyShape(n, media.naturalWidth, media.naturalHeight);
+    }
+    return n;
   }
 
   function build() {
@@ -163,7 +192,10 @@
       if (seen.has(k) || a === b) return;
       seen.add(k);
       const line = document.createElementNS(SVGNS, 'line');
-      line.setAttribute('class', 'idx-edge' + (a.group !== b.group ? ' cross' : ''));
+      const cross = a.group !== b.group;
+      line.setAttribute('class', 'idx-edge' + (cross ? ' cross' : ''));
+      // intra-group links take the group's colour; cross-group links stay neutral grey
+      if (!cross) line.style.stroke = colorFor(a.group);
       svg.appendChild(line);
       edges.push({ line, a, b });
     };
