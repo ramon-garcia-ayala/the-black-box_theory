@@ -1,0 +1,24 @@
+INTERNAL RELATIONS
+
+The black box is not just hidden.
+It is organized.
+
+For Simondon, what matters is not that we cannot see inside —
+it is that the inside has a structure.
+
+An ensemble of functional relations
+that produce the behavior we observe.
+
+In the AI model:
+parameters and weights
+trained patterns
+latent dimensional relations
+encoded aesthetic tendencies
+
+These are not secrets.
+They are relations —
+and relations can be read.
+
+Opening the box means reading those relations.
+Not just the output they produce.
+Not just the names of the pipeline stages.
