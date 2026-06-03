@@ -22,7 +22,24 @@
 
   function measure() { W = host.clientWidth || innerWidth; H = host.clientHeight || innerHeight; }
   function rootVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
-  function colorFor(g) { return (g && rootVar('--grp-' + g)) || '#9aa3bd'; }
+
+  // mega-group hue + subtle per-chapter shade (mirrors canvas.js / lib/scan.mjs).
+  const HUE_FALLBACK = ['#0a30ff', '#ff1f8f', '#00a36c', '#7a3cff', '#e2641a', '#0a93b8', '#c01f5b', '#1f7a3c', '#b8860a', '#5b3cc0'];
+  function baseHue(key) {
+    const v = key ? rootVar('--grp-' + key) : '';
+    return v || (key ? HUE_FALLBACK[(key - 1) % HUE_FALLBACK.length] : '#9aa3bd');
+  }
+  function shadeHex(hex, amt) {
+    hex = String(hex).replace('#', '');
+    if (hex.length === 3) hex = hex.split('').map((c) => c + c).join('');
+    const r = parseInt(hex.slice(0, 2), 16), g = parseInt(hex.slice(2, 4), 16), b = parseInt(hex.slice(4, 6), 16);
+    const mix = (v) => Math.round(v + (255 - v) * amt).toString(16).padStart(2, '0');
+    return '#' + mix(r) + mix(g) + mix(b);
+  }
+  function slideColor(colorKey, shadeStep) {
+    if (!colorKey) return '#9aa3bd';
+    return shadeHex(baseHue(colorKey), Math.min(0.58, (shadeStep || 0) * 0.26));
+  }
   function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
   const dist2 = (a, b) => { const dx = a.bx - b.bx, dy = a.by - b.by; return dx * dx + dy * dy; };
   const BAR = 19;   // .winbar height — the window chrome's title bar
@@ -49,11 +66,12 @@
     const w = isText ? 124 + ((Math.random() * 48) | 0) : Math.round(u * 0.82);
     const h = isText ? 96 + ((Math.random() * 46) | 0) : Math.round(u * 0.82) + BAR;
 
+    const color = slideColor(s && s.colorKey, s && s.shadeStep);
     const el = document.createElement('button');
     el.type = 'button';
     el.className = 'idx-node';
     if (g) el.dataset.group = g;
-    el.style.setProperty('--gc', colorFor(g));
+    el.style.setProperty('--gc', color);
     el.style.width = w + 'px';
     el.style.height = h + 'px';
 
@@ -63,7 +81,8 @@
     const title = (isText ? (s && s.name ? s.name : (it.name || 'README.TXT')) : (it.name || it.type)).toUpperCase();
     const bar = document.createElement('div');
     bar.className = 'winbar';
-    bar.innerHTML = `<span class="wb-dot"></span><span class="wb-title">${esc(title)}</span><span class="wb-btns"><i>_</i><i>&#9633;</i><i class="wb-x">&#10005;</i></span>`;
+    const grpChip = (s && s.gnum) ? `<span class="wb-grp">G${s.gnum}</span>` : '';
+    bar.innerHTML = `<span class="wb-dot"></span>${grpChip}<span class="wb-title">${esc(title)}</span><span class="wb-btns"><i>_</i><i>&#9633;</i><i class="wb-x">&#10005;</i></span>`;
     const body = document.createElement('div');
     body.className = 'winbody';
 
@@ -99,7 +118,7 @@
     el.addEventListener('click', () => pick(g));
     layer.appendChild(el);
 
-    const n = { el, group: g, u, w, h, r: Math.max(w, h) / 2, bx: 0, by: 0, fx: 0, fy: 0, ph: Math.random() * Math.PI * 2, amp: 3 + Math.random() * 5, sp: 0.4 + Math.random() * 0.6 };
+    const n = { el, group: g, color, u, w, h, r: Math.max(w, h) / 2, bx: 0, by: 0, fx: 0, fy: 0, ph: Math.random() * Math.PI * 2, amp: 3 + Math.random() * 5, sp: 0.4 + Math.random() * 0.6 };
 
     // give each image/video window its media's ORIGINAL orientation once dimensions are known
     if (media && it.type === 'video') {
@@ -195,7 +214,7 @@
       const cross = a.group !== b.group;
       line.setAttribute('class', 'idx-edge' + (cross ? ' cross' : ''));
       // intra-group links take the group's colour; cross-group links stay neutral grey
-      if (!cross) line.style.stroke = colorFor(a.group);
+      if (!cross) line.style.stroke = a.color;
       svg.appendChild(line);
       edges.push({ line, a, b });
     };
@@ -219,14 +238,15 @@
     legend.innerHTML = '';
     const nameOf = (g) => {
       const first = slides.find((s) => (s.group || 0) === g);
-      return g ? 'GROUP ' + String(g).padStart(2, '0') : 'UNGROUPED';
+      if (!g) return 'UNGROUPED';
+      return first && first.mega ? `M${first.mega} · CH ${first.chapter}` : 'GROUP ' + String(g).padStart(2, '0');
     };
     [...groups.keys()].forEach((g) => {
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'idx-leg';
       if (g) b.dataset.group = g;
-      b.style.setProperty('--gc', colorFor(g));
+      b.style.setProperty('--gc', (groups.get(g)[0] && groups.get(g)[0].color) || '#9aa3bd');
       b.innerHTML = `<i></i><span>${nameOf(g)}</span><em>${groups.get(g).length}</em>`;
       b.addEventListener('pointerenter', () => highlight(g));
       b.addEventListener('pointerleave', () => highlight(null));
