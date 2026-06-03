@@ -717,6 +717,19 @@ body[data-mega]:not([data-mega=""]) .stage::before { opacity: .6; }
 .rat-dim { color: var(--sh); font-weight: 400; }
 .rat-big { font-family: var(--font-disp); font-weight: 400; font-style: normal; font-size: clamp(26px, 5vw, 60px); margin-top: 16px; color: var(--blue); text-transform: uppercase; }
 
+/* ACT 3 — exclusive lone-text panel (important statement / audience question). Same dialog
+   chrome + zoom-in as the Act-4 panel, but layered ABOVE the zoomed Act-3 hero (z 520) and
+   below the nav (z 550) so it fully takes over the screen for that slide. */
+.bigtext { position: absolute; inset: 0; z-index: 545; display: grid; place-items: center; opacity: 0; visibility: hidden; transition: opacity .55s var(--ease); pointer-events: none; padding: 5vw; background: rgba(255,255,255,.72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.bigtext.show { opacity: 1; visibility: visible; }
+.bigtext .rat-win { width: min(900px, 92vw); height: auto; max-height: 86vh; transform-origin: center; }
+.bigtext.show .rat-win { animation: ratpop .62s var(--ease) both; }
+.bigtext-inner { display: flex; flex-direction: column; justify-content: center; gap: 6px; }
+.bigtext-body { font-family: var(--font-mono); font-weight: 700; font-size: clamp(20px, 3.4vw, 40px); line-height: 1.25; color: var(--ink); white-space: pre-line; margin: 0; }
+/* a question to the audience reads in the page's blue, slightly larger */
+.bigtext.is-question .bigtext-body { color: var(--blue); font-size: clamp(22px, 3.8vw, 46px); }
+.bigtext.is-question .rat-kicker { color: var(--magenta); }
+
 /* ============================================================
    CHAT MODAL — thin blueprint dialog
    ============================================================ */

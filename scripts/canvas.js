@@ -16,7 +16,7 @@
   let nodes = [];
   let W = 0;
   let H = 0;
-  let scopeGroup = null;          // null = all groups (full run); else present only this group
+  let scopeSection = null;        // null = everything; else present only this SECTION (mega-group)
 
   // group-coloured connection graph (mirrors the Act-2 index; edges follow the windows)
   const SVGNS = 'http://www.w3.org/2000/svg';
@@ -176,7 +176,7 @@
       const color = slideColor(s.colorKey, s.shadeStep);
       (s.items || []).forEach((item, ii) => {
         const sz = sizeFor(item.type, gi);
-        const node = { type: item.type, group: s.group || 0, gnum: s.gnum || 0, mega: s.mega || 0, chapter: s.chapter || 0, color, folder: fi, ii, gi: gi++, w: sz.w, h: sz.h, x: 0, y: 0, sx: 0, sy: 0, rot: 0, scale: 1, z: 1, op: 1, blur: 0, glitchy: true, delay: 0 };
+        const node = { type: item.type, group: s.group || 0, section: s.section || 0, gnum: s.gnum || 0, mega: s.mega || 0, chapter: s.chapter || 0, color, folder: fi, ii, gi: gi++, w: sz.w, h: sz.h, x: 0, y: 0, sx: 0, sy: 0, rot: 0, scale: 1, z: 1, op: 1, blur: 0, glitchy: true, delay: 0 };
         makeItem(node, item);
         nodes.push(node);
       });
@@ -288,8 +288,8 @@
     requestAnimationFrame(frame);
   }
 
-  /* ---------- group scope (the INDEX act presents one chosen group) ---------- */
-  function inScope(n) { return scopeGroup == null || (n.group || 0) === scopeGroup; }
+  /* ---------- section scope (Act 3 presents one mega-group at a time) ---------- */
+  function inScope(n) { return scopeSection == null || (n.section || 0) === scopeSection; }
   // folder indices that belong to the current scope, in narrative order
   function scopedFolderList() {
     const seen = new Set(); const out = [];
@@ -535,14 +535,14 @@
     load,
     count: () => slides.length,
     slides: () => slides,
-    // group scoping (driven by the INDEX act)
-    setScope(g) { scopeGroup = (g == null ? null : Number(g)); },
-    scope: () => scopeGroup,
+    // section scoping = one mega-group at a time (Act 3)
+    setScope(sec) { scopeSection = (sec == null ? null : Number(sec)); },
+    scope: () => scopeSection,
     scopeFolderCount() { return scopedFolderList().length; },
     scopeSlides() { return scopedFolderList().map((fi) => slides[fi]).filter(Boolean); },
-    groupsPresent() {
+    sectionsPresent() {
       const seen = new Set(); const out = [];
-      slides.forEach((s) => { const g = s.group || 0; if (!seen.has(g)) { seen.add(g); out.push(g); } });
+      slides.forEach((s) => { const sec = s.section || 0; if (!seen.has(sec)) { seen.add(sec); out.push(sec); } });
       return out;
     },
     edges(on) { setEdges(on); },

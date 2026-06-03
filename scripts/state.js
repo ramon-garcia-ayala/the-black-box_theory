@@ -20,16 +20,20 @@
   const chatModal = document.getElementById('chatModal');
   const chatClose = document.getElementById('chatClose');
   const rationalize = document.getElementById('rationalize');
+  const bigText = document.getElementById('bigText');
+  const bigTextTitle = document.getElementById('bigTextTitle');
+  const bigTextKicker = document.getElementById('bigTextKicker');
+  const bigTextBody = document.getElementById('bigTextBody');
 
   let seq = [];        // ordered list of stops (see buildSequence)
   let step = 0;
   let total = 0;
   let N = 0;
 
-  function foldersOfGroup(g) {
+  function foldersOfSection(sec) {
     const out = [];
-    Canvas.slides().forEach((s, fi) => { if ((s.group || 0) === g) out.push(fi); });
-    return out;          // global folder indices, in narrative order
+    Canvas.slides().forEach((s, fi) => { if ((s.section || 0) === sec) out.push(fi); });
+    return out;          // global folder indices (one per slide), in narrative order
   }
 
   // Build the full stop list once the canvas data is known.
@@ -39,14 +43,17 @@
     seq.push({ act: 1, name: 'THE BOX', kind: 'intro' });
     seq.push({ act: 1, name: 'THE TEAM', kind: 'team' });
     seq.push({ act: 2, name: 'THE INDEX', kind: 'index' });
-    Canvas.groupsPresent().forEach((g) => {
-      const folders = foldersOfGroup(g);
+    // Act 3 walks one MEGA-GROUP (section) at a time, in sequence — its messy canvas holds ALL
+    // its chapters' slides, then NEXT steps through each slide (group then slide order within
+    // the mega). Each focus carries its own slide's group/colour so the chapter variation shows.
+    Canvas.sectionsPresent().forEach((sec) => {
+      const folders = foldersOfSection(sec);
       if (!folders.length) return;
       const s0 = Canvas.slides()[folders[0]] || {};
-      const meta = { mega: s0.mega || 0, chapter: s0.chapter || 0, gnum: s0.gnum || 0, colorKey: s0.colorKey || 0, shadeStep: s0.shadeStep || 0 };
-      seq.push({ act: 3, name: 'THE MESSY CANVAS', kind: 'messy', group: g, count: folders.length, ...meta });
+      seq.push({ act: 3, name: 'THE MESSY CANVAS', kind: 'messy', section: sec, count: folders.length, mega: s0.mega || 0, gnum: s0.gnum || 0, colorKey: s0.colorKey || 0, shadeStep: 0 });
       folders.forEach((fi, li) => {
-        seq.push({ act: 3, name: 'RATIONALIZING', kind: 'focus', group: g, localIdx: li, folder: fi, count: folders.length, ...meta });
+        const s = Canvas.slides()[fi] || {};
+        seq.push({ act: 3, name: 'RATIONALIZING', kind: 'focus', section: sec, localIdx: li, folder: fi, count: folders.length, mega: s.mega || 0, gnum: s.gnum || 0, chapter: s.chapter || 0, colorKey: s.colorKey || 0, shadeStep: s.shadeStep || 0 });
       });
     });
     // Act 4 is two stops: first ALL items assemble into the ordered grid (no phrase yet),
@@ -63,6 +70,26 @@
 
   let pdots = [];
 
+  // A "slide" folder holding ONLY a single text file becomes an exclusive Act-3 panel
+  // (an important statement / a question to the audience), like the Act-4 panel.
+  function isLoneText(s) { return !!(s && s.items && s.items.length === 1 && s.items[0].type === 'text'); }
+  function showBigText(s) {
+    if (!bigText) return;
+    const txt = (s.items[0].text || '').trim();
+    const question = /\?/.test(txt);
+    bigText.classList.toggle('is-question', question);
+    if (bigTextKicker) bigTextKicker.textContent = question ? 'A QUESTION FOR YOU' : 'KEY TEXT';
+    if (bigTextTitle) bigTextTitle.textContent = ((s.name || 'KEY TEXT') + (question ? '.ASK' : '.TXT')).toUpperCase();
+    if (bigTextBody) bigTextBody.textContent = txt;
+    bigText.classList.add('show');
+    bigText.setAttribute('aria-hidden', 'false');
+  }
+  function hideBigText() {
+    if (!bigText) return;
+    bigText.classList.remove('show');
+    bigText.setAttribute('aria-hidden', 'true');
+  }
+
   // A readable tooltip for each stop — so the bar doubles as a clickable table of contents.
   function stopLabel(p) {
     const grp = p.gnum || p.group;
@@ -70,7 +97,7 @@
       case 'intro': return 'Act 1 · The Box';
       case 'team': return 'Act 1 · The Team';
       case 'index': return 'Act 2 · The Index';
-      case 'messy': return (p.mega ? `Mega ${p.mega} · ` : '') + `Group ${grp} — start`;
+      case 'messy': return p.mega ? `Mega-group ${p.mega} — start` : `Group ${grp} — start`;
       case 'focus': {
         const s = Canvas.slides()[p.folder];
         const idx = s ? String(s.index).padStart(2, '0') : '';
@@ -162,18 +189,17 @@
       Canvas.setScope(null);
       folderLabel.textContent = `INDEX // ${N} SLIDE${N === 1 ? '' : 'S'}`;
     } else if (p.kind === 'messy') {
-      Canvas.setScope(p.group);
+      Canvas.setScope(p.section);
       if (forward) Canvas.scatterZoomView(); else Canvas.scatterView();   // zoom-in entrance going forward
-      const g2 = String(p.gnum || p.group).padStart(2, '0');
       folderLabel.textContent = p.mega
-        ? `MEGA ${String(p.mega).padStart(2, '0')} · GROUP ${g2} // ${p.count} SLIDE${p.count === 1 ? '' : 'S'}`
-        : `GROUP ${g2} // ${p.count} SLIDE${p.count === 1 ? '' : 'S'}`;
+        ? `MEGA-GROUP ${String(p.mega).padStart(2, '0')} // ${p.count} SLIDE${p.count === 1 ? '' : 'S'}`
+        : `GROUP ${String(p.gnum || p.section).padStart(2, '0')} // ${p.count} SLIDE${p.count === 1 ? '' : 'S'}`;
     } else if (p.kind === 'focus') {
-      Canvas.setScope(p.group);
+      Canvas.setScope(p.section);
       Canvas.focusView(p.localIdx);
       const s = Canvas.slides()[p.folder];
       const idx = s ? String(s.index).padStart(2, '0') : '--';
-      folderLabel.textContent = p.mega ? `M${p.mega}·G${p.gnum}·${idx} / ${p.count}` : `G${p.gnum || p.group}·${idx} / ${p.count}`;
+      folderLabel.textContent = p.mega ? `M${p.mega}·G${p.gnum}·${idx} / ${p.count}` : `G${p.gnum}·${idx} / ${p.count}`;
     } else if (p.kind === 'grid' || p.kind === 'gridlog') {
       Canvas.setScope(null); Canvas.gridView();      // ALL groups assemble, ordered + coloured
       folderLabel.textContent = p.kind === 'gridlog' ? 'RATIONALIZED' : 'ORDER // COMPLETE';
@@ -185,6 +211,10 @@
     // the punch line emerges only on the second Act-4 stop (over the already-assembled grid)
     rationalize.classList.toggle('show', p.kind === 'gridlog');
     rationalize.setAttribute('aria-hidden', p.kind === 'gridlog' ? 'false' : 'true');
+
+    // exclusive panel for a lone-text Act-3 slide (important statement / audience question)
+    const fs = p.kind === 'focus' ? Canvas.slides()[p.folder] : null;
+    if (fs && isLoneText(fs)) showBigText(fs); else hideBigText();
 
     const chatOpen = p.kind === 'chat';
     if (chatModal) {
@@ -217,9 +247,11 @@
   function next() { if (step < total) go(step + 1); }
   function prev() { if (step > 0) go(step - 1); }
 
-  // From the index graph: jump straight to a chosen group's messy canvas (then its run).
+  // From the index graph: jump to the chosen item's MEGA-GROUP (section) messy canvas, then run.
   function pickGroup(g) {
-    const idx = seq.findIndex((p) => p.kind === 'messy' && p.group === Number(g));
+    const slide = Canvas.slides().find((s) => (s.group || 0) === Number(g));
+    const sec = slide ? (slide.section || 0) : 0;
+    const idx = seq.findIndex((p) => p.kind === 'messy' && p.section === sec);
     if (idx >= 0) go(idx);
   }
   window.Present = { pickGroup, next, prev };
