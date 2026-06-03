@@ -24,6 +24,13 @@
   const bigTextTitle = document.getElementById('bigTextTitle');
   const bigTextKicker = document.getElementById('bigTextKicker');
   const bigTextBody = document.getElementById('bigTextBody');
+  const bigSeq = document.getElementById('bigSeq');
+  const bigSeqTitle = document.getElementById('bigSeqTitle');
+  const bigSeqImg = document.getElementById('bigSeqImg');
+  const bigSeqCount = document.getElementById('bigSeqCount');
+  const bigSeqText = document.getElementById('bigSeqText');
+  const bigSeqPrev = document.getElementById('bigSeqPrev');
+  const bigSeqNext = document.getElementById('bigSeqNext');
 
   let seq = [];        // ordered list of stops (see buildSequence)
   let step = 0;
@@ -89,6 +96,72 @@
     bigText.classList.remove('show');
     bigText.setAttribute('aria-hidden', 'true');
   }
+
+  // A slide that contains a numbered image SEQUENCE (carousel) opens in a LARGE exclusive viewer:
+  // a dominant image stage + bottom arrows, with the folder's text shown smaller underneath.
+  function carouselOf(s) { return s && s.items ? s.items.find((it) => it.type === 'carousel') : null; }
+  let seqFrames = [], seqCur = 0;
+  function seqShow(i) {
+    const n = seqFrames.length; if (!n) return;
+    seqCur = ((i % n) + n) % n;
+    if (bigSeqImg) bigSeqImg.src = seqFrames[seqCur].src;
+    if (bigSeqCount) bigSeqCount.textContent = (seqCur + 1) + ' / ' + n;
+  }
+  if (bigSeqPrev) bigSeqPrev.addEventListener('click', () => seqShow(seqCur - 1));
+  if (bigSeqNext) bigSeqNext.addEventListener('click', () => seqShow(seqCur + 1));
+  function showBigSeq(s, car) {
+    if (!bigSeq) return;
+    seqFrames = car.frames || [];
+    if (bigSeqTitle) bigSeqTitle.textContent = ((s.name || 'SEQUENCE') + ' · ' + car.name).toUpperCase();
+    const txt = s.items.find((it) => it.type === 'text');
+    if (bigSeqText) bigSeqText.textContent = txt ? (txt.text || '').trim() : '';
+    seqShow(0);
+    bigSeq.classList.add('show');
+    bigSeq.setAttribute('aria-hidden', 'false');
+    if (seqScroller) seqScroller.restart();   // text scroll (re)starts from the top
+  }
+  function hideBigSeq() {
+    if (!bigSeq) return;
+    bigSeq.classList.remove('show');
+    bigSeq.setAttribute('aria-hidden', 'true');
+  }
+
+  // Same auto-scroll as the Act-3 text windows (canvas.js setupTextAutoScroll): while the panel
+  // is shown the copy descends slowly from the top, holds, then returns up quickly — restarting
+  // from the top each time the panel (re)opens, and stopping the instant the reader scrolls it.
+  function makePanelAutoScroll(el, isActive) {
+    if (!el) return { restart() {} };
+    let manual = false, prog = false, active = false, t0 = 0;
+    const stop = () => { manual = true; };
+    el.addEventListener('wheel', stop, { passive: true });
+    el.addEventListener('touchstart', stop, { passive: true });
+    el.addEventListener('scroll', () => { if (prog) { prog = false; return; } manual = true; });
+    const period = 20000, fTopHold = 0.06, fDown = 0.58, fBotHold = 0.06, fUp = 0.30;
+    const dStart = fTopHold, dEnd = dStart + fDown, uStart = dEnd + fBotHold;
+    function frame(t) {
+      const on = isActive();
+      if (on && !active) { active = true; manual = false; t0 = t; prog = true; el.scrollTop = 0; }
+      else if (!on && active) { active = false; }
+      if (on && !manual) {
+        const max = el.scrollHeight - el.clientHeight;
+        if (max > 1) {
+          const ph = (((t - t0) % period) + period) % period / period;
+          let p;
+          if (ph < dStart) p = 0;
+          else if (ph < dEnd) p = (ph - dStart) / fDown;
+          else if (ph < uStart) p = 1;
+          else p = 1 - (ph - uStart) / fUp;
+          const e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+          const target = Math.round(e * max);
+          if (target !== Math.round(el.scrollTop)) { prog = true; el.scrollTop = target; }
+        }
+      }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+    return { restart() { manual = false; active = false; } };
+  }
+  const seqScroller = makePanelAutoScroll(bigSeqText, () => !!(bigSeq && bigSeq.classList.contains('show')));
 
   // A readable tooltip for each stop — so the bar doubles as a clickable table of contents.
   function stopLabel(p) {
@@ -212,9 +285,13 @@
     rationalize.classList.toggle('show', p.kind === 'gridlog');
     rationalize.setAttribute('aria-hidden', p.kind === 'gridlog' ? 'false' : 'true');
 
-    // exclusive panel for a lone-text Act-3 slide (important statement / audience question)
+    // exclusive Act-3 panels: a numbered sequence opens the LARGE viewer; a lone text file opens
+    // the statement/question panel; otherwise neither.
     const fs = p.kind === 'focus' ? Canvas.slides()[p.folder] : null;
-    if (fs && isLoneText(fs)) showBigText(fs); else hideBigText();
+    const car = fs ? carouselOf(fs) : null;
+    if (car) { showBigSeq(fs, car); hideBigText(); }
+    else if (fs && isLoneText(fs)) { showBigText(fs); hideBigSeq(); }
+    else { hideBigText(); hideBigSeq(); }
 
     const chatOpen = p.kind === 'chat';
     if (chatModal) {

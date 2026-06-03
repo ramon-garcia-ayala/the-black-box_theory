@@ -132,6 +132,12 @@
       inner.textContent = item.text || '';
       tc.appendChild(inner);
       body.appendChild(tc);
+    } else if (item.type === 'carousel') {
+      // a numbered image sequence → one window showing a single frame at a time, advanced ONLY
+      // by the prev/next buttons in a bottom panel (same window chrome). Frame orientation is
+      // taken from the FIRST image once (kept fixed so the window doesn't jump while flipping);
+      // each frame is shown with `contain` so the whole numbered image is visible.
+      buildCarousel(node, item, body, win);
     } else if (item.type === 'video') {
       const v = document.createElement('video');
       v.src = item.src; v.muted = true; v.loop = true; v.autoplay = true;
@@ -148,10 +154,46 @@
       body.appendChild(img);
       if (item.type === 'gif') { const t = document.createElement('span'); t.className = 'gif-tag'; t.textContent = 'GIF'; body.appendChild(t); }
     }
-    win.appendChild(bar); win.appendChild(body); fig.appendChild(win);
+    win.appendChild(bar); win.appendChild(body);
+    if (node._foot) win.appendChild(node._foot);     // carousel nav panel sits below the body
+    fig.appendChild(win);
     world.appendChild(fig);
     node.el = fig;
     enableDrag(node);
+  }
+
+  // The numbered-sequence viewer: one frame at a time + a bottom nav panel (prev / counter /
+  // next) in the window's own chrome. Advances ONLY on button click (no auto-play).
+  function buildCarousel(node, item, body) {
+    const frames = item.frames || [];
+    node.frames = frames; node.cur = 0;
+
+    const img = document.createElement('img');
+    img.className = 'cz-img'; img.alt = ''; img.loading = 'lazy'; img.decoding = 'async';
+    let oriented = false;
+    img.addEventListener('load', () => { if (!oriented) { oriented = true; applyOrientation(node, img.naturalWidth, img.naturalHeight); } });
+    img.addEventListener('error', () => { img.replaceWith(brokenTile((frames[node.cur] && frames[node.cur].name) || 'IMG')); });
+    body.appendChild(img);
+
+    const foot = document.createElement('div');
+    foot.className = 'winfoot';
+    foot.innerHTML = '<button type="button" class="cz-btn cz-prev" aria-label="Previous">&#9664;</button><span class="cz-count"></span><button type="button" class="cz-btn cz-next" aria-label="Next">&#9654;</button>';
+    const countEl = foot.querySelector('.cz-count');
+    const prev = foot.querySelector('.cz-prev');
+    const next = foot.querySelector('.cz-next');
+    const show = (i) => {
+      const n = frames.length; if (!n) return;
+      node.cur = ((i % n) + n) % n;
+      img.src = frames[node.cur].src;
+      countEl.textContent = (node.cur + 1) + ' / ' + n;
+    };
+    // a button press must NOT start a window drag, nor bubble as a canvas interaction
+    const stop = (e) => e.stopPropagation();
+    [prev, next].forEach((b) => b.addEventListener('pointerdown', stop));
+    prev.addEventListener('click', (e) => { e.stopPropagation(); show(node.cur - 1); });
+    next.addEventListener('click', (e) => { e.stopPropagation(); show(node.cur + 1); });
+    node._foot = foot;
+    show(0);
   }
   function brokenTile(title) {
     const d = document.createElement('div');
@@ -176,7 +218,7 @@
       const color = slideColor(s.colorKey, s.shadeStep);
       (s.items || []).forEach((item, ii) => {
         const sz = sizeFor(item.type, gi);
-        const node = { type: item.type, group: s.group || 0, section: s.section || 0, gnum: s.gnum || 0, mega: s.mega || 0, chapter: s.chapter || 0, color, folder: fi, ii, gi: gi++, w: sz.w, h: sz.h, x: 0, y: 0, sx: 0, sy: 0, rot: 0, scale: 1, z: 1, op: 1, blur: 0, glitchy: true, delay: 0 };
+        const node = { type: item.type, group: s.group || 0, section: s.section || 0, gnum: s.gnum || 0, mega: s.mega || 0, chapter: s.chapter || 0, color, frames: item.frames || null, cur: 0, folder: fi, ii, gi: gi++, w: sz.w, h: sz.h, x: 0, y: 0, sx: 0, sy: 0, rot: 0, scale: 1, z: 1, op: 1, blur: 0, glitchy: true, delay: 0 };
         makeItem(node, item);
         nodes.push(node);
       });

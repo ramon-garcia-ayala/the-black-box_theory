@@ -124,6 +124,18 @@ on every request via `/api/slides`.
    - **Local (`vercel dev`):** reload the page — it appears instantly.
    - **Production:** `git push` → Vercel redeploys and re-scans automatically.
 
+> **Special Act-3 panels (automatic, by folder contents):**
+> - **Numbered image sequence → large viewer.** If a folder holds **≥2 images whose filenames are
+>   just numbers** (`01.png`, `02.png`, … `06.png`), the scanner collapses them into one
+>   `carousel` item (`lib/scan.mjs` `collapseCarousel`). In Act 3 that slide opens as a **large
+>   exclusive viewer** (`#bigSeq`) — one frame at a time, advanced **only** by the bottom `‹ ›`
+>   arrows + counter (no auto-play). Any text file in the same folder shows **smaller underneath**
+>   and auto-scrolls with the same rules as the Act-3 text windows. (In the index and the Act-4
+>   grid the sequence is a single window showing the first frame, with an `❏ N` badge.)
+> - **Lone text file → statement / question panel.** A folder with **only one text file** opens as
+>   the exclusive `#bigText` panel — a key statement, or (if the text contains a `?`) a **question
+>   for the audience**. Both panels block interaction with the windows behind them.
+
 Re-indexing folders (e.g. renaming `04_` → `02_`) reorders the slides. Adding a folder
 adds a step. The chatbot also re-reads this content, so the AI "knows" every new idea.
 

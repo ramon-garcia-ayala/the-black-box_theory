@@ -102,11 +102,16 @@
       body.appendChild(v);
       media = v;
     } else {
+      // carousel → show its first frame (the index is just a map; navigation lives in Act 3)
+      const src = it.type === 'carousel' ? (it.frames && it.frames[0] && it.frames[0].src) : it.src;
       const img = document.createElement('img');
-      img.src = it.src; img.alt = ''; img.loading = 'lazy'; img.decoding = 'async';
+      img.src = src; img.alt = ''; img.loading = 'lazy'; img.decoding = 'async';
       img.addEventListener('error', () => { el.classList.add('idx-broken'); });
       body.appendChild(img);
       media = img;
+      if (it.type === 'carousel' && it.frames) {
+        const t = document.createElement('span'); t.className = 'gif-tag'; t.textContent = '❏ ' + it.frames.length; body.appendChild(t);
+      }
     }
     win.appendChild(bar); win.appendChild(body); el.appendChild(win);
 
