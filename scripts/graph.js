@@ -118,7 +118,7 @@
     el.addEventListener('click', () => pick(g));
     layer.appendChild(el);
 
-    const n = { el, group: g, color, u, w, h, r: Math.max(w, h) / 2, bx: 0, by: 0, fx: 0, fy: 0, ph: Math.random() * Math.PI * 2, amp: 3 + Math.random() * 5, sp: 0.4 + Math.random() * 0.6 };
+    const n = { el, group: g, color, u, w, h, r: Math.max(w, h) / 2, bx: 0, by: 0, fx: 0, fy: 0, ph: Math.random() * Math.PI * 2, amp: 2 + Math.random() * 3, sp: 0.25 + Math.random() * 0.35 };
 
     // give each image/video window its media's ORIGINAL orientation once dimensions are known
     if (media && it.type === 'video') {
@@ -258,7 +258,7 @@
   /* ---------- interaction ---------- */
   // Isolate a group: dim every other group's nodes + edges, lift the chosen group.
   // Toggling classes directly keeps this scalable to any number of groups (no CSS enum).
-  function highlight(g) {
+  function applyHighlight(g) {
     const on = g != null;
     host.classList.toggle('isolating', on);
     for (const n of nodes) {
@@ -274,8 +274,14 @@
       b.classList.toggle('active', on && Number(b.dataset.group || 0) === g);
     });
   }
+
+  // Hover changes apply immediately; the smooth 3s fade (see .idx-node / .idx-edge transitions)
+  // does all the easing — groups dim out and the hovered one lifts in softly, with no lock,
+  // regardless of which one was on before.
+  function highlight(g) { applyHighlight(g == null ? null : g); }
+  function resetHighlight() { applyHighlight(null); }
   function pick(g) {
-    highlight(null);
+    resetHighlight();
     if (window.Present && Present.pickGroup) Present.pickGroup(g);
   }
 
@@ -364,7 +370,7 @@
       resetView();
       host.classList.add('show');
       host.setAttribute('aria-hidden', 'false');
-      highlight(null);
+      resetHighlight();
       if (!running) { running = true; t0 = 0; raf = requestAnimationFrame(tick); }
     },
     hide() {
