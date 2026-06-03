@@ -144,6 +144,12 @@ adds a step. The chatbot also re-reads this content, so the AI "knows" every new
 > picked up — collected into a trailing "More" slide — so nothing you add is silently ignored;
 > but for proper ordering put them in a numbered folder.
 
+> **Optional tidy nesting.** Slide folders may be grouped inside a **per-mega-group container**
+> (e.g. `Slides_Datasets/Mg04/Mg04_g01_01_Name/`) — the scanner **recurses**, treating any folder
+> that directly holds files as a slide and descending through folders that only hold sub-folders.
+> Ordering/colour are unchanged (parsed from each folder's own `MgNN_gNN_MM` basename), and `src`
+> paths include the nesting automatically. Flat and nested layouts both work and can be mixed.
+
 > Prioritise **images over long text** — the design is built for a visual collage.
 
 ### Source papers (`assets/PDF/`) — the chatbot's second knowledge source
@@ -184,7 +190,7 @@ api/
 lib/scan.mjs            Shared directory scanner for Slides_Datasets (single source of truth)
 lib/pdfs.mjs            Shared PDF scanner for assets/PDF/ — extracts text (unpdf), grounds the chatbot
 tools/build-slides.mjs  OPTIONAL: writes slides-data.js snapshot for file:// fallback
-Slides_Datasets/NN_*/   YOUR CONTENT
+Slides_Datasets/MgNN/MgNN_gNN_MM_*/   YOUR CONTENT (slide folders, optionally nested per mega-group)
 assets/PDF/             Source papers (Schmidgen / Simondon …)
 assets/                 UI reference images + team art (not served; staging/reference)
 slides-data.js          OPTIONAL offline snapshot (generated)
