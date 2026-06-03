@@ -11,7 +11,9 @@
   const openBtn = document.getElementById('openBtn');
   const nextBtn = document.getElementById('nextBtn');
   const prevBtn = document.getElementById('prevBtn');
+  const fsBtn = document.getElementById('fsBtn');
   const actLabel = document.getElementById('actLabel');
+  const hudTitle = document.getElementById('hudTitle');
   const folderLabel = document.getElementById('folderLabel');
   const progress = document.getElementById('progress');
   const introWin = document.getElementById('introWin');
@@ -242,6 +244,19 @@
     body.dataset.mega = onMega ? String(p.mega) : '';
     if (onMega && Canvas.color) body.style.setProperty('--mega-col', Canvas.color(p.colorKey, 0));
 
+    // HUD title reflects the mega-group you're inside: mega 1 = INTRODUCTION, others = GROUP N,
+    // coloured in that mega's hue. The framing acts keep the default title.
+    if (hudTitle) {
+      if (onMega) {
+        hudTitle.textContent = p.mega === 1 ? 'INTRODUCTION' : ('GROUP ' + p.mega);
+        hudTitle.style.color = Canvas.color ? Canvas.color(p.colorKey || p.mega, 0) : '';
+      } else {
+        hudTitle.textContent = 'INSIDE_THE_BLACK_BOX';
+        hudTitle.style.color = '';
+      }
+      hudTitle.setAttribute('data-text', hudTitle.textContent);
+    }
+
     introWin.classList.toggle('hidden', p.kind !== 'intro');
     if (teamWin) {
       teamWin.classList.toggle('hidden', p.kind !== 'team');
@@ -347,6 +362,23 @@
   nextBtn.addEventListener('click', next);
   prevBtn.addEventListener('click', prev);
   if (chatClose) chatClose.addEventListener('click', prev);
+
+  // full-screen toggle (bottom-right, left of NEXT)
+  if (fsBtn) {
+    const fsEl = document.documentElement;
+    const isFs = () => document.fullscreenElement || document.webkitFullscreenElement;
+    const enter = () => (fsEl.requestFullscreen || fsEl.webkitRequestFullscreen || (() => {})).call(fsEl);
+    const exit = () => (document.exitFullscreen || document.webkitExitFullscreen || (() => {})).call(document);
+    const paintFs = () => {
+      const on = !!isFs();
+      fsBtn.title = on ? 'Exit full screen' : 'Full screen';   // glyph ⛶ stays; active state shows via class
+      fsBtn.classList.toggle('is-fs', on);
+    };
+    fsBtn.addEventListener('click', () => { if (isFs()) exit(); else enter(); });
+    document.addEventListener('fullscreenchange', paintFs);
+    document.addEventListener('webkitfullscreenchange', paintFs);
+    paintFs();
+  }
 
   window.addEventListener('keydown', (e) => {
     if (e.target.closest('input, textarea')) return;

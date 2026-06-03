@@ -17,7 +17,7 @@ rationalization screen the page is a clean, light, quiet space.
 
 | Act | Screen | Idea |
 |----|--------|------|
-| **1 — The Box** | A **full-screen electric-blue splash** (the title page). Dim monospace margin notes `{1}`–`{8}` in the four corners carry the Act-1 ideas (incl. the Barthes line *"first a gothic cathedral, then a kitchen"*); the **hero is the large centred title + subtitle** and the **team credits** (Rania Chihaoui · Andrea Cutroni · Eduardo Martinez · Ramon Garcia). A **second Act-1 stop, THE TEAM** (`#teamWin`), shows the four members' photos in a row — square, blue-filtered (`mix-blend-mode: luminosity`) — each inside the Act-3 window chrome with the full name in the header. No "open" button — advance with **NEXT** / keyboard. The canvas/decor stay **off** during Act 1. | We admire the surface; we never open it. |
+| **1 — The Box** | **Three blue stops.** (a) A **full-screen electric-blue splash** with dim corner notes `{1}`–`{8}` and the large centred title + subtitle. (b) **THE TEAM** (`#teamWin`) — the four members' photos in a row (square, blue-filtered via `mix-blend-mode: luminosity`) in window chrome, with a discreet tagline. (c) **MATIAS DEL CAMPO / SPAN** (`#matiasWin`) — a profile slide (portrait + write-up) in the same blue aesthetic. Slides **appear instantly opaque and only fade out** (and `body[data-act="1"]` is blue) so **no white ever flashes** between Act-1 transitions. Advance with **NEXT** / keyboard; canvas/decor stay off. | We admire the surface; we never open it. |
 | **2 — The Index** | A **force-directed graph on a clean white field** of **every** item in every folder (`scripts/graph.js`), each wearing the Act-3 "web window" chrome (title bar in its group's colour + a `G{n}` chip; text items use the Act-3 card). No title/subtitle — just the network and the legend. Groups are **mixed into one chaotic blob** yet **hovering** any node *isolates its whole group* (the rest dims). **Wheel-zoom + right/middle-drag pan** (Rhino-style). Pressing **NEXT** (`ENTER ▸`) walks the mega-groups **in order**; **clicking** a node (or legend) jumps straight to that item's mega-group (`Present.pickGroup` → its section). | A map of the inside before we open it — pick a thread to pull. |
 | **3 — The Messy Canvas (per MEGA-GROUP)** | The run plays **one mega-group (section) at a time**. Entering one, **only that mega-group's assets** appear with a **zoom-in entrance** (`scatterZoomView`); its items link as a graph — thin **edges tinted per chapter** (faint, `.world-edge` opacity ~.22). Each **NEXT** brings the next slide up as a **centered, zoomed "hero"** (walking its chapters in order: g01 slides, then g02 …); earlier slides settle into the mega-group's ordered grid (white-veiled). A slide folder holding **only a single text file** opens instead as an **exclusive Act-4-style panel** (`#bigText`) — a key statement, or (if it contains a `?`) a **question for the audience**. When a mega-group ends, the next one zooms in. | The raw inside of the box, opened super-chapter by super-chapter. |
 | **4 — Rationalization (all assembled)** | **Two stops.** First NEXT (`RATIONALIZE ▸`): **ALL items assemble into one ordered grid** — by **mega → group → slide**, headers **coloured per mega-group**, **no connecting edges** — the clean grid alone. Second NEXT (`REVEAL ▸`): the punch line **emerges** over that same grid in a window (`RATIONALIZED.LOG`). | "Order where there was chaos." Everything finally in its place, then named. |
@@ -128,10 +128,10 @@ on every request via `/api/slides`.
 > - **Numbered image sequence → large viewer.** If a folder holds **≥2 images whose filenames are
 >   just numbers** (`01.png`, `02.png`, … `06.png`), the scanner collapses them into one
 >   `carousel` item (`lib/scan.mjs` `collapseCarousel`). In Act 3 that slide opens as a **large
->   exclusive viewer** (`#bigSeq`) — one frame at a time, advanced **only** by the bottom `‹ ›`
->   arrows + counter (no auto-play). Any text file in the same folder shows **smaller underneath**
->   and auto-scrolls with the same rules as the Act-3 text windows. (In the index and the Act-4
->   grid the sequence is a single window showing the first frame, with an `❏ N` badge.)
+>   exclusive viewer** (`#bigSeq`) — a **two-column** panel: the image + `‹ ›` arrows/counter on
+>   the LEFT (advanced **only** by the arrows, no auto-play) and the folder's text on the RIGHT
+>   (auto-scrolls like the Act-3 text windows). Two columns keep it short enough to fit vertically.
+>   (In the index and the Act-4 grid the sequence is a single window showing the first frame, `❏ N`.)
 > - **Lone text file → statement / question panel.** A folder with **only one text file** opens as
 >   the exclusive `#bigText` panel — a key statement, or (if the text contains a `?`) a **question
 >   for the audience**. Both panels block interaction with the windows behind them.
@@ -271,8 +271,22 @@ If no key is set, the page works fully and the chatbot returns a graceful in-cha
 - **Element window frame (all acts):** `.win` carries a single `border: 1px solid #000` and
   `box-shadow: none`; hover / `fresh` / `dragging` / `.idx-node` states all keep that same outline
   (no shadows, no blue rings). Change the one `.win` border to restyle every item window at once.
-- **Window buttons are decorative:** the `_ ☐ ✕` in every window's title bar have
-  `pointer-events: none` (`.wb-btns` in `main.css`) — none of them do anything.
+- **Window buttons (Act-3 canvas items):** only **⊡ magnify** and **_ restore** work; **✕ close is
+  decorative**. Magnify lifts the window to a centered popup that **hugs the content's exact aspect**
+  (no letterbox, `maxSize()` in `canvas.js`), with a **FLIP zoom** from/to the source window (same
+  duration both ways) and a blurred `#magScrim` backdrop. While magnified the media is **static** (no
+  `winpan` / text auto-scroll). Restores on _, ⊡, the backdrop, or any navigation. Elsewhere all
+  `.wb-btns` stay decorative (`pointer-events: none`).
+- **HUD title per mega-group:** the top-left `#hudTitle` shows **INTRODUCTION** for mega-group 1 and
+  **GROUP N** for the rest, **coloured in that mega's hue** (set in `state.js` `apply()`); framing
+  acts keep the default `INSIDE_THE_BLACK_BOX`.
+- **Full-screen toggle:** `#fsBtn` in the nav (left of NEXT) calls the Fullscreen API; turns blue
+  (`.is-fs`) while active. **Cursor:** the crosshair (`.cur-c`) is **yellow on Act 1 & Act 5** (blue
+  screens, `mix-blend-mode: normal`), blue elsewhere; the text label `.cur-tag` is hidden.
+- **Fits any screen vertically:** no window exceeds **70% of viewport height** (`applyOrientation`
+  cap); grid/focus/zoom scale to fit, and the layout **reflows when media loads** (`reflowSoon`;
+  scatter only nudges off-screen windows). Team/Matias slides size by `min(vw, vh)` with a safe-scroll
+  fallback; short screens hide the intro corner notes.
 - **Mega-group / chapter colour:** a window's header hue is computed in JS (`slideColor()` in both
   `canvas.js` and `graph.js`) from the scanner's `colorKey` (the mega-group → base `--grp-N` hue)
   and `shadeStep` (the chapter → subtle lightening, `*0.16`, capped). Tune the per-chapter step or

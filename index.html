@@ -112,7 +112,7 @@
 
   <!-- ===== HUD ===== -->
   <header class="hud">
-    <div class="hud-title glitch" data-text="INSIDE_THE_BLACK_BOX">INSIDE_THE_BLACK_BOX</div>
+    <div class="hud-title glitch" id="hudTitle" data-text="INSIDE_THE_BLACK_BOX">INSIDE_THE_BLACK_BOX</div>
     <div class="hud-meta">
       <span class="hud-chip" id="actLabel">ACT 1 / 4 · THE BOX</span>
       <span class="hud-chip hud-chip-alt" id="folderLabel">SYS://READY</span>
@@ -270,13 +270,19 @@
       <div id="bigSeq" class="bigseq" aria-hidden="true">
         <div class="win rat-win" role="dialog" aria-label="Image sequence">
           <div class="winbar"><span class="wb-dot"></span><span class="wb-title" id="bigSeqTitle">SEQUENCE</span><span class="wb-btns"><i>_</i><i>&#9633;</i><i class="wb-x">&#10005;</i></span></div>
-          <div class="bigseq-stage"><img id="bigSeqImg" alt=""></div>
-          <div class="winfoot bigseq-foot">
-            <button type="button" class="cz-btn" id="bigSeqPrev" aria-label="Previous">&#9664;</button>
-            <span class="cz-count" id="bigSeqCount"></span>
-            <button type="button" class="cz-btn" id="bigSeqNext" aria-label="Next">&#9654;</button>
+          <div class="bigseq-body">
+            <div class="bigseq-main">
+              <div class="bigseq-stage"><img id="bigSeqImg" alt=""></div>
+              <div class="winfoot bigseq-foot">
+                <button type="button" class="cz-btn" id="bigSeqPrev" aria-label="Previous">&#9664;</button>
+                <span class="cz-count" id="bigSeqCount"></span>
+                <button type="button" class="cz-btn" id="bigSeqNext" aria-label="Next">&#9654;</button>
+              </div>
+            </div>
+            <div class="bigseq-side">
+              <p class="bigseq-text" id="bigSeqText"></p>
+            </div>
           </div>
-          <p class="bigseq-text" id="bigSeqText"></p>
         </div>
       </div>
     </section>
@@ -320,6 +326,7 @@
   <nav class="nav">
     <button id="prevBtn" class="btn btn-nav" disabled>◂ BACK</button>
     <div id="progress" class="progress" role="tablist" aria-label="Jump to any step"></div>
+    <button id="fsBtn" class="btn btn-nav btn-fs" title="Full screen" aria-label="Toggle full screen">&#9974;</button>
     <button id="nextBtn" class="btn btn-nav btn-next" data-text="NEXT">NEXT ▸</button>
   </nav>
 

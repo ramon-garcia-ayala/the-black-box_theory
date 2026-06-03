@@ -16,6 +16,9 @@
   let nodes = [];
   let W = 0;
   let H = 0;
+  let currentView = { kind: 'scatter', idx: 0 };   // last applied view — re-applied when media resizes
+  let reflowTimer = 0;
+  let entranceUntil = 0;          // while a zoom-in entrance is playing, defer reflows past it
   let scopeSection = null;        // null = everything; else present only this SECTION (mega-group)
 
   // group-coloured connection graph (mirrors the Act-2 index; edges follow the windows)
@@ -79,13 +82,46 @@
   // updating it here is picked up the next time a view is applied; we also resize in place now.
   function applyOrientation(node, natW, natH) {
     if (!natW || !natH) return;
-    const h = Math.round(Math.max(node.w * 0.5, Math.min(node.w * 1.7, node.w * (natH / natW))));
+    // never let a single window be taller than ~70% of the viewport, so it always fits vertically
+    const cap = (H || innerHeight) * 0.70;
+    const h = Math.round(Math.min(cap, Math.max(node.w * 0.5, Math.min(node.w * 1.7, node.w * (natH / natW)))));
     if (h === node.h) return;
     node.h = h;
     if (node.el) {
       node.el.style.height = h + 'px';
       node.el.style.transform = `translate(${node.x}px, ${node.y}px) translate(-50%, -50%) scale(${node.scale})`;
     }
+    reflowSoon();   // re-fit the layout with the media's real size (so it stays on-screen)
+  }
+
+  // Re-apply the current view after media loads / resizes (debounced). Deterministic layouts
+  // (fixed scatter seed, computed grid/focus) mean positions don't jump — they just re-fit to
+  // the now-known window sizes, keeping every window inside the viewport. Skipped while a window
+  // is magnified (its FLIP animation owns the transform).
+  function reflowSoon() {
+    if (maximizedNode) return;
+    clearTimeout(reflowTimer);
+    const wait = Math.max(80, entranceUntil - Date.now() + 40);   // wait out any zoom-in entrance
+    reflowTimer = setTimeout(() => {
+      if (maximizedNode) return;
+      measure();
+      // grid/focus are structured layouts that pack by height + scale to fit → recompute them.
+      // scatter is free placement → only NUDGE any window that now sticks out back on-screen
+      // (keeps the messy arrangement stable instead of reshuffling on every image load).
+      if (currentView.kind === 'focus') focus(currentView.idx);
+      else if (currentView.kind === 'grid') grid();
+      else clampScatter();
+      render();
+    }, wait);
+  }
+  // keep every in-scope scattered window fully inside the viewport (used after media resizes)
+  function clampScatter() {
+    nodes.forEach((n) => {
+      if (!inScope(n) || n.hidden) return;
+      const padX = n.w * 0.5 + 8, padY = n.h * 0.5 + 8;
+      n.x = n.sx = Math.max(padX, Math.min(Math.max(padX, W - padX), n.sx));
+      n.y = n.sy = Math.max(padY, Math.min(Math.max(padY, H - padY), n.sy));
+    });
   }
 
   function DEMO() {
@@ -196,17 +232,41 @@
     return `translate(${(r.left - innerWidth / 2).toFixed(1)}px, ${(r.top - innerHeight / 2).toFixed(1)}px) scale(${sx.toFixed(4)}, ${sy.toFixed(4)})`;
   }
   const CENTERED = 'translate(-50%, -50%)';
+  const MAG_DUR = 360;
+  // The maximized window hugs its CONTENT's exact aspect (no letterbox): media → its natural
+  // ratio scaled to fit the viewport; text → a comfortable readable box. Returns {w,h} incl. chrome.
+  function maxSize(node) {
+    const el = node.el;
+    const bar = el.querySelector('.winbar'); const barH = bar ? bar.offsetHeight : 19;
+    const foot = el.querySelector('.winfoot'); const footH = foot ? foot.offsetHeight : 0;
+    const maxW = Math.round(innerWidth * 0.92);
+    const maxH = Math.round(innerHeight * 0.90);
+    if (node.type === 'text') return { w: Math.min(maxW, 760), h: Math.min(maxH, 640) };
+    const media = el.querySelector('.winbody img, .winbody video');
+    let aw = node.w, ah = Math.max(1, node.h - barH - footH);   // fallback: current frame
+    if (media) {
+      const nw = media.naturalWidth || media.videoWidth, nh = media.naturalHeight || media.videoHeight;
+      if (nw && nh) { aw = nw; ah = nh; }
+    }
+    const availH = maxH - barH - footH;
+    let dispW = maxW, dispH = dispW * (ah / aw);
+    if (dispH > availH) { dispH = availH; dispW = dispH * (aw / ah); }
+    return { w: Math.round(dispW), h: Math.round(dispH + barH + footH) };
+  }
+  function restoreSize(node) { node.el.style.width = node.w + 'px'; node.el.style.height = node.h + 'px'; }
   function maximize(node) {
     killMax();
     const el = node.el;
     node._srcRect = el.getBoundingClientRect();          // the source window's exact rect
     el.classList.add('maximized');
+    const sz = maxSize(node);                            // size the frame to the content exactly
+    el.style.width = sz.w + 'px'; el.style.height = sz.h + 'px';
     ensureMagScrim().classList.add('show');
     maximizedNode = node;
     const start = rectTransform(node._srcRect, el.offsetWidth, el.offsetHeight);
     node._anim = el.animate(
       [{ transformOrigin: '0 0', transform: start }, { transformOrigin: '0 0', transform: CENTERED }],
-      { duration: 360, easing: MAG_EASE, fill: 'forwards' }
+      { duration: MAG_DUR, easing: MAG_EASE, fill: 'forwards' }
     );
   }
   function closeMax() {
@@ -217,19 +277,20 @@
     const dest = node._srcRect || el.getBoundingClientRect();
     if (magScrim) magScrim.classList.remove('show');
     if (node._anim) { node._anim.cancel(); node._anim = null; }
-    const end = rectTransform(dest, el.offsetWidth, el.offsetHeight);
+    const end = rectTransform(dest, el.offsetWidth, el.offsetHeight);   // zoom back down to source
     const anim = el.animate(
       [{ transformOrigin: '0 0', transform: CENTERED }, { transformOrigin: '0 0', transform: end }],
-      { duration: 320, easing: MAG_EASE, fill: 'forwards' }
+      { duration: MAG_DUR, easing: MAG_EASE, fill: 'forwards' }
     );
-    const done = () => { el.classList.remove('maximized'); anim.cancel(); };   // back to canvas place
-    anim.onfinish = done; anim.oncancel = () => el.classList.remove('maximized');
+    const done = () => { el.classList.remove('maximized'); restoreSize(node); anim.cancel(); };   // back to canvas
+    anim.onfinish = done; anim.oncancel = () => { el.classList.remove('maximized'); restoreSize(node); };
   }
   function killMax() {                                    // instant teardown (on navigation)
     if (maximizedNode) {
       const el = maximizedNode.el;
       if (maximizedNode._anim) { maximizedNode._anim.cancel(); maximizedNode._anim = null; }
       el.classList.remove('maximized');
+      restoreSize(maximizedNode);
       maximizedNode = null;
     }
     if (magScrim) magScrim.classList.remove('show');
@@ -379,8 +440,8 @@
     function frame(t) {
       for (const c of cards) {
         // A window is "active" only while it is the zoomed hero of the moment (the `fresh`
-        // window). That way the descent always (re)starts from the top each time it zooms in.
-        const active = c.item.classList.contains('fresh');
+        // window) AND not magnified — a maximized window stays perfectly still.
+        const active = c.item.classList.contains('fresh') && !c.item.classList.contains('maximized');
         if (active && !c.active) {             // just became the hero → always start from the top
           c.active = true; c.manual = false; c.t0 = t; c.prog = true; c.tc.scrollTop = 0;
         } else if (!active && c.active) {
@@ -566,6 +627,7 @@
   // itself on the screen". Out-of-scope items fade away. Used entering Act 3 / each group.
   function scatterZoom() {
     measure();
+    entranceUntil = Date.now() + 1100;   // ~stagger (.28s) + transform transition — defer reflows
     scatter();          // compute scattered targets for in-scope; hide the rest
     render();           // commit z-index / classes / out-of-scope fade-out
     nodes.forEach((n) => {
@@ -663,9 +725,9 @@
     },
     edges(on) { setEdges(on); },
     color(colorKey, shadeStep) { return slideColor(colorKey, shadeStep); },
-    scatterView() { killMax(); measure(); scatter(); render(); hideFolderTitle(); },
-    scatterZoomView() { killMax(); scatterZoom(); hideFolderTitle(); },
-    focusView(localIdx) { killMax(); measure(); focus(localIdx); render(); },
-    gridView() { killMax(); measure(); grid(); render(); }
+    scatterView() { currentView = { kind: 'scatter', idx: 0 }; killMax(); measure(); scatter(); render(); hideFolderTitle(); },
+    scatterZoomView() { currentView = { kind: 'scatter', idx: 0 }; killMax(); scatterZoom(); hideFolderTitle(); },
+    focusView(localIdx) { currentView = { kind: 'focus', idx: localIdx }; killMax(); measure(); focus(localIdx); render(); },
+    gridView() { currentView = { kind: 'grid', idx: 0 }; killMax(); measure(); grid(); render(); }
   };
 })();

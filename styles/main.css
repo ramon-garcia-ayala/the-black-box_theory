@@ -74,6 +74,10 @@ body {
 }
 ::selection { background: var(--blue); color: #fff; }
 
+/* Act 1 sits on the electric blue (intro splash + the team / Matias slides are all blue), so the
+   base ground is blue too — nothing white can ever flash through between Act-1 slide transitions. */
+body[data-act="1"] { background-color: var(--blue); }
+
 /* ---- CALM: when the RATIONALIZATION screen appears (act 3), the page STAYS on the
    clean light/white theme and the chaotic, repetitive decor switches off — so the
    screen reads as a quiet transition into calm. (Act 4 / the chat stays light too.) ---- */
@@ -345,10 +349,13 @@ body[data-act="5"] #scrim { background: var(--blue); backdrop-filter: none; -web
 .cur-c { color: var(--blue); }
 /* RGB-split duplicates removed — single clean blue crosshair, no color fringing */
 .cur-m, .cur-y { display: none; }
-/* on the black climax (act 3/4) the crosshair cursor goes white */
-/* act 3 is now light — keep the blue crosshair (no white inversion) */
+/* act 1 (blue splash) and act 5 (blue chat): the crosshair turns YELLOW — and blends normally
+   (not multiply) so it stays a clean, bright yellow on the blue field. */
+body[data-act="1"] .cursor, body[data-act="5"] .cursor { mix-blend-mode: normal; }
+body[data-act="1"] .cur-c, body[data-act="5"] .cur-c { color: var(--yellow); }
 .cursor.hot .cur { width: 34px; height: 34px; }
-.cur-tag { position: absolute; left: 16px; top: 12px; font: 700 8px/1 var(--font-cond); letter-spacing: 1.5px; text-transform: uppercase; color: var(--blue); white-space: nowrap; opacity: calc(.4 + var(--chaos) * .5); }
+/* no text label on the cursor */
+.cur-tag { display: none; }
 
 /* ============================================================
    HUD
@@ -464,19 +471,23 @@ body[data-step="0"] .fx-scanlines { display: none !important; }
 /* TEAM slide (between Act 1 and Act 2) — four square, blue-filtered portraits in a row */
 .team-win {
   position: fixed; inset: 0; width: 100%; height: 100%; z-index: 399;
-  transition: opacity .55s var(--ease), visibility 0s linear 0s;
+  /* appears INSTANTLY (fully opaque) so it covers the field before the previous slide leaves —
+     no white ever shows between Act-1 slides; only the OUTGOING slide fades (see .hidden). */
 }
-.team-win.hidden { opacity: 0; visibility: hidden; pointer-events: none; transition-delay: 0s, .55s; }
+.team-win.hidden { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .55s var(--ease), visibility 0s linear .55s; }
 .team-screen {
-  position: absolute; inset: 0; overflow: hidden;
+  position: absolute; inset: 0; overflow: auto;
   background: var(--blue); color: #fff; font-family: var(--font-mono);
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5vh;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; justify-content: safe center;     /* fallback, then safe-center */
+  gap: clamp(14px, 3.5vh, 40px); padding: clamp(16px, 5vh, 56px) 5vw;
 }
 .team-eyebrow { font: 700 clamp(11px, 1.3vw, 15px)/1 var(--font-cond); letter-spacing: 6px; text-transform: uppercase; color: rgba(255,255,255,.8); margin: 0; }
 /* discreet line about us, under the roster */
 .team-tagline { margin: 0; text-align: center; font: 400 clamp(12px, 1.4vw, 16px)/1.5 var(--font-mono); font-style: italic; color: rgba(255,255,255,.6); letter-spacing: .3px; max-width: 42ch; }
 .team-row { display: flex; gap: clamp(14px, 3vw, 48px); align-items: flex-start; flex-wrap: wrap; justify-content: center; }
-.team-row .team-card.item { position: static; left: auto; top: auto; transform: none; margin: 0; width: clamp(140px, 17vw, 230px); }
+/* size by the SMALLER of width/height so four square cards always fit vertically too */
+.team-row .team-card.item { position: static; left: auto; top: auto; transform: none; margin: 0; width: clamp(110px, min(17vw, 22vh), 230px); }
 .team-card .win { width: 100%; }
 .team-photo { aspect-ratio: 1 / 1; overflow: hidden; background: var(--blue); }
 .team-photo img {
@@ -491,7 +502,8 @@ body[data-step="0"] .fx-scanlines { display: none !important; }
   display: flex; gap: clamp(20px, 4vw, 56px); align-items: center; justify-content: center;
   flex-wrap: wrap; width: min(1100px, 92vw);
 }
-.matias-row .matias-card.item { position: static; left: auto; top: auto; transform: none; margin: 0; width: clamp(220px, 26vw, 340px); flex: 0 0 auto; }
+/* portrait sized by the smaller of width/height so the 3:4 frame never overflows vertically */
+.matias-row .matias-card.item { position: static; left: auto; top: auto; transform: none; margin: 0; width: clamp(150px, min(26vw, 32vh), 340px); flex: 0 0 auto; }
 .matias-card .win { width: 100%; }
 /* portrait is 760×1013 (exact 3:4) — match the frame so the whole image shows, no crop/pan */
 .matias-card .team-photo { aspect-ratio: 3 / 4; }
@@ -567,6 +579,10 @@ body[data-step="0"] .fx-scanlines { display: none !important; }
 @media (max-width: 860px) {
   .inote { display: none; }
   .intro-manifesto span { margin-left: 0 !important; }
+}
+/* on short screens the corner notes would crowd / overlap the centred title — hide them */
+@media (max-height: 620px) {
+  .inote { display: none; }
 }
 
 /* ============================================================
@@ -645,14 +661,14 @@ body[data-step="0"] .fx-scanlines { display: none !important; }
   transition: opacity .4s var(--ease), visibility .4s var(--ease);
 }
 #magScrim.show { opacity: 1; visibility: visible; pointer-events: auto; }
+/* size (width/height) is set inline by JS to the content's exact aspect — no letterbox */
 .item.maximized {
   position: fixed !important; left: 50% !important; top: 50% !important;
-  width: min(92vw, 1100px) !important; height: min(88vh, 820px) !important;
   transform: translate(-50%, -50%) !important; transform-origin: 0 0 !important;
   z-index: 700 !important; opacity: 1 !important; filter: none !important; transition: none !important;
 }
 .item.maximized .winbody { background: var(--paper); }
-.item.maximized .winbody img, .item.maximized .winbody video { object-fit: contain; }
+.item.maximized .winbody img, .item.maximized .winbody video { object-fit: contain; animation: none; }   /* static — no vertical pan while magnified */
 .item.maximized .win::after { display: none; }   /* drop the "past" white veil while magnified */
 
 /* Active (non-dimmed) windows breathe: their content gently auto-scrolls down, pauses,
@@ -803,18 +819,27 @@ body[data-mega]:not([data-mega=""]) .stage::before { opacity: .6; }
 
 /* ACT 3 — LARGE numbered-sequence viewer (same overlay treatment as the lone-text panel, but
    VERY big: a dominant image stage + bottom arrows, and the folder's text smaller underneath). */
-.bigseq { position: absolute; inset: 0; z-index: 545; display: grid; place-items: center; opacity: 0; visibility: hidden; transition: opacity .55s var(--ease); pointer-events: none; padding: 3vw; background: rgba(255,255,255,.72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.bigseq { position: absolute; inset: 0; z-index: 545; display: grid; place-items: center; opacity: 0; visibility: hidden; transition: opacity .55s var(--ease); pointer-events: none; padding: 3vh 3vw; background: rgba(255,255,255,.72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 .bigseq.show { opacity: 1; visibility: visible; pointer-events: auto; }   /* backdrop captures clicks → never reach the windows behind */
-.bigseq .rat-win { width: min(1200px, 95vw); height: min(92vh, 900px); max-height: 92vh; transform-origin: center; }
+.bigseq .rat-win { width: min(1200px, 95vw); height: min(86vh, 780px); max-height: 90vh; transform-origin: center; }
 .bigseq.show .rat-win { animation: ratpop .62s var(--ease) both; }
+/* two columns: image + arrows on the LEFT, the folder's text on the RIGHT — keeps the panel
+   short enough to fit vertically instead of stacking everything in a tall column. */
+.bigseq-body { flex: 1; min-height: 0; display: flex; }
+.bigseq-main { flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
 .bigseq-stage { flex: 1; min-height: 0; background: var(--paper); display: grid; place-items: center; overflow: hidden; padding: 14px; }
 .bigseq-stage img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
-.bigseq-foot { flex: 0 0 30px; height: 30px; gap: 14px; }
+.bigseq-foot { flex: 0 0 32px; height: 32px; gap: 14px; }
 .bigseq-foot .cz-btn { width: 30px; height: 20px; font-size: 11px; line-height: 20px; }
 .bigseq-foot .cz-count { font-size: 12px; min-width: 52px; }
-/* the folder's accompanying text — kept SMALL under the big image */
-.bigseq-text { flex: 0 0 auto; max-height: 22vh; overflow: auto; background: var(--paper); border-top: 1px solid var(--hair); margin: 0; padding: 10px 16px; font: 400 13px/1.45 var(--font-mono); color: var(--ink); white-space: pre-line; text-align: center; }
-.bigseq-text:empty { display: none; }
+.bigseq-side { flex: 0 0 clamp(220px, 26%, 360px); min-height: 0; background: var(--paper); border-left: 1px solid var(--hair); display: flex; }
+.bigseq-text { flex: 1; min-height: 0; overflow: auto; margin: 0; padding: 16px 18px; font: 400 14px/1.55 var(--font-mono); color: var(--ink); white-space: pre-line; text-align: left; }
+.bigseq-side:has(.bigseq-text:empty) { display: none; }     /* no text file → image fills the panel */
+
+@media (max-width: 760px) {
+  .bigseq-body { flex-direction: column; }
+  .bigseq-side { flex: 0 0 auto; max-height: 26vh; border-left: 0; border-top: 1px solid var(--hair); }
+}
 
 /* ============================================================
    CHAT MODAL — thin blueprint dialog
@@ -887,6 +912,9 @@ body[data-mega]:not([data-mega=""]) .stage::before { opacity: .6; }
   50%      { box-shadow: 0 0 0 2px var(--paper), 0 0 0 5px var(--dc); }
 }
 .btn-nav { min-width: 96px; }
+/* compact full-screen toggle, left of NEXT */
+.btn-fs { min-width: 0; padding: 10px 12px; font-size: 15px; line-height: 1; flex: 0 0 auto; }
+.btn-fs.is-fs { color: #fff; background: var(--blue); box-shadow: inset 0 0 0 1px var(--blue); }
 
 /* ============================================================
    GLITCH TEXT UTILITY — RGB split, intensity scales with chaos
