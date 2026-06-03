@@ -21,9 +21,26 @@
   // group-coloured connection graph (mirrors the Act-2 index; edges follow the windows)
   const SVGNS = 'http://www.w3.org/2000/svg';
   let edgesSvg = null, edgePairs = [], edgesOn = false, edgeRAF = 0;
-  function groupColor(g) {
-    const v = g ? getComputedStyle(document.documentElement).getPropertyValue('--grp-' + g).trim() : '';
-    return v || '#9aa3bd';
+
+  // ---- mega-group / chapter colour ----
+  // Each MEGA-GROUP owns a base hue (--grp-{colorKey}); each GROUP/CHAPTER inside it is a
+  // SUBTLE lighter shade of that hue (shadeStep), so chapters of one super-chapter read as a
+  // family. colorKey/shadeStep come from the scanner (lib/scan.mjs).
+  const HUE_FALLBACK = ['#0a30ff', '#ff1f8f', '#00a36c', '#7a3cff', '#e2641a', '#0a93b8', '#c01f5b', '#1f7a3c', '#b8860a', '#5b3cc0'];
+  function baseHue(key) {
+    const v = key ? getComputedStyle(document.documentElement).getPropertyValue('--grp-' + key).trim() : '';
+    return v || (key ? HUE_FALLBACK[(key - 1) % HUE_FALLBACK.length] : '#9aa3bd');
+  }
+  function shadeHex(hex, amt) {           // amt 0..1 lightens toward white
+    hex = String(hex).replace('#', '');
+    if (hex.length === 3) hex = hex.split('').map((c) => c + c).join('');
+    const r = parseInt(hex.slice(0, 2), 16), g = parseInt(hex.slice(2, 4), 16), b = parseInt(hex.slice(4, 6), 16);
+    const mix = (v) => Math.round(v + (255 - v) * amt).toString(16).padStart(2, '0');
+    return '#' + mix(r) + mix(g) + mix(b);
+  }
+  function slideColor(colorKey, shadeStep) {
+    if (!colorKey) return '#9aa3bd';
+    return shadeHex(baseHue(colorKey), Math.min(0.58, (shadeStep || 0) * 0.26));   // marked per-chapter step
   }
 
   /* ---------- helpers ---------- */
@@ -86,7 +103,10 @@
   function makeItem(node, item) {
     const fig = document.createElement('figure');
     fig.className = `item type-${item.type} glitchy`;
-    if (node.group) fig.dataset.group = node.group;   // group → header colour (see main.css)
+    if (node.group) {
+      fig.dataset.group = node.group;            // presence drives the winbar text-shadow (main.css)
+      if (node.mega) fig.dataset.mega = node.mega;
+    }
     fig.style.width = node.w + 'px';
     fig.style.height = node.h + 'px';
     fig.style.setProperty('--fp', Math.random().toFixed(3));   // random float phase (Act 3 drift)
@@ -96,7 +116,11 @@
     win.className = 'win';
     const bar = document.createElement('div');
     bar.className = 'winbar';
-    bar.innerHTML = `<span class="wb-dot"></span><span class="wb-title">${esc(title)}</span><span class="wb-btns"><i>_</i><i>&#9633;</i><i class="wb-x">&#10005;</i></span>`;
+    if (node.group) bar.style.background = node.color;   // mega hue, shaded per chapter
+    // group chip in the title bar (G1, G2, …) — explicit per-window cue for which group/chapter
+    // this slide belongs to, so groups inside one mega-group are distinguishable at a glance.
+    const grpChip = node.gnum ? `<span class="wb-grp">G${node.gnum}</span>` : '';
+    bar.innerHTML = `<span class="wb-dot"></span>${grpChip}<span class="wb-title">${esc(title)}</span><span class="wb-btns"><i>_</i><i>&#9633;</i><i class="wb-x">&#10005;</i></span>`;
     const body = document.createElement('div');
     body.className = 'winbody';
 
@@ -149,9 +173,10 @@
     world.appendChild(edgesSvg);
     let gi = 0;
     slides.forEach((s, fi) => {
+      const color = slideColor(s.colorKey, s.shadeStep);
       (s.items || []).forEach((item, ii) => {
         const sz = sizeFor(item.type, gi);
-        const node = { type: item.type, group: s.group || 0, folder: fi, ii, gi: gi++, w: sz.w, h: sz.h, x: 0, y: 0, sx: 0, sy: 0, rot: 0, scale: 1, z: 1, op: 1, blur: 0, glitchy: true, delay: 0 };
+        const node = { type: item.type, group: s.group || 0, gnum: s.gnum || 0, mega: s.mega || 0, chapter: s.chapter || 0, color, folder: fi, ii, gi: gi++, w: sz.w, h: sz.h, x: 0, y: 0, sx: 0, sy: 0, rot: 0, scale: 1, z: 1, op: 1, blur: 0, glitchy: true, delay: 0 };
         makeItem(node, item);
         nodes.push(node);
       });
@@ -171,7 +196,7 @@
     const byGroup = new Map();
     nodes.forEach((n) => { const g = n.group || 0; if (!byGroup.has(g)) byGroup.set(g, []); byGroup.get(g).push(n); });
     for (const [g, arr] of byGroup) {
-      const col = groupColor(g);
+      const col = (arr[0] && arr[0].color) || '#9aa3bd';   // the group's mega-hue / chapter-shade
       for (let i = 0; i < arr.length; i++) {
         if (i + 1 < arr.length) addEdge(arr[i], arr[i + 1], col);
         if (i + 2 < arr.length) addEdge(arr[i], arr[i + 2], col);
@@ -450,8 +475,13 @@
     const s = slides[fo];
     if (!folderTitle || !s) return;
     if (ftGrp) {
-      if (s.group) { ftGrp.textContent = 'G' + s.group; folderTitle.dataset.group = s.group; }
-      else { ftGrp.textContent = ''; folderTitle.removeAttribute('data-group'); }
+      if (s.group) {
+        ftGrp.textContent = s.mega ? ('M' + s.mega + '·G' + s.gnum) : ('G' + s.gnum);
+        folderTitle.dataset.group = s.group;
+        ftGrp.style.background = slideColor(s.colorKey, s.shadeStep);
+      } else {
+        ftGrp.textContent = ''; folderTitle.removeAttribute('data-group'); ftGrp.style.background = '';
+      }
     }
     ftIdx.textContent = String(s.index).padStart(2, '0');
     ftName.textContent = (s.name || s.folder || '').toUpperCase();
@@ -516,6 +546,7 @@
       return out;
     },
     edges(on) { setEdges(on); },
+    color(colorKey, shadeStep) { return slideColor(colorKey, shadeStep); },
     scatterView() { measure(); scatter(); render(); hideFolderTitle(); },
     scatterZoomView() { scatterZoom(); hideFolderTitle(); },
     focusView(localIdx) { measure(); focus(localIdx); render(); },

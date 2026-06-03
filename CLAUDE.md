@@ -80,16 +80,27 @@ dialogs above keep a float shadow, by design.)
 The canvas is **content-driven and dynamic**. The page reads `Slides_Datasets/` live
 on every request via `/api/slides`.
 
-1. Create a folder. **Two accepted naming shapes:**
-   - **Grouped (recommended):** `gNN_MM_Title` — **group `NN`**, **slide `MM`** within that
-     group, then the name. e.g. `g01_03_Open_Machine` = group 1, slide 3, "Open Machine".
-     Slides are ordered by **group, then slide**. Each group tints its window **header a
-     different colour** (groups 1–6 are predefined in `main.css` as `--grp-1 … --grp-6`;
-     add more there to extend). A small coloured **group chip** (`G1`, `G2`, …) also shows
-     in the folder title HUD.
-   - **Legacy (ungrouped):** `NN_Title` — a two-digit numeric prefix sets the order, e.g.
-     `06_Concretization`. These keep the default blue header and sort **after** all grouped
-     folders, so you can migrate to groups gradually without breaking the narrative order.
+1. Create a folder. **Three accepted naming shapes** (a folder = one **slide**):
+   - **Mega-grouped (recommended):** `MgNN_gNN_MM_Title` — **mega-group `NN`** (a *super-chapter*),
+     **group `NN`** within it (a *chapter* of that super-chapter), **slide `MM`** within that
+     group, then the name. e.g. `Mg01_g01_01_fotos` = mega 1, group 1, slide 1, "fotos".
+     Ordering is **mega → group → slide**, and groups are walked **sequentially** (group 1,
+     then group 2, …). Group numbers may **restart inside each mega-group** (`Mg02_g01_…` is a
+     different group from `Mg01_g01_…`) — the scanner assigns each a unique global ordinal.
+     **Colour = hierarchy:** each **mega-group owns one hue** (`--grp-{mega}`); each **group /
+     chapter inside it is a SUBTLE lighter shade** of that hue, so chapters read as a family.
+     In Act 3 a thin **top band** in the mega-group's base hue (`--mega-col`) marks the current
+     super-chapter, and the HUD chip shows `M{mega}·C{chapter}`.
+   - **Grouped (legacy):** `gNN_MM_Title` — **group `NN`**, **slide `MM`**, no mega-group. e.g.
+     `g01_03_Open_Machine`. Each group keeps its own distinct `--grp-N` colour (no shading) and
+     sorts **after** all mega-grouped folders — so you can migrate to mega-groups gradually.
+   - **Ungrouped (legacy):** `NN_Title` — a numeric prefix sets the order, e.g. `06_Concretization`.
+     Default blue header; sorts **last**.
+
+   > Groups 1–6 have predefined hues in `main.css` (`--grp-1 … --grp-6`); beyond that, both the
+   > scanner colours and `canvas.js`/`graph.js` fall back to a built-in palette (`HUE_FALLBACK`).
+   > The scanner (`lib/scan.mjs`) emits per-slide `mega`, `chapter`, `colorKey`, `shadeStep` and a
+   > unique global `group` ordinal; the clients derive the final colour via `slideColor()`.
 2. Drop files inside. Supported types:
    - **Images:** `.png .jpg .jpeg .webp .svg .avif .bmp`
    - **GIFs:** `.gif`
@@ -239,6 +250,13 @@ If no key is set, the page works fully and the chatbot returns a graceful in-cha
 - **Element window frame (all acts):** `.win` carries a single `border: 1px solid #000` and
   `box-shadow: none`; hover / `fresh` / `dragging` / `.idx-node` states all keep that same outline
   (no shadows, no blue rings). Change the one `.win` border to restyle every item window at once.
+- **Window buttons are decorative:** the `_ ☐ ✕` in every window's title bar have
+  `pointer-events: none` (`.wb-btns` in `main.css`) — none of them do anything.
+- **Mega-group / chapter colour:** a window's header hue is computed in JS (`slideColor()` in both
+  `canvas.js` and `graph.js`) from the scanner's `colorKey` (the mega-group → base `--grp-N` hue)
+  and `shadeStep` (the chapter → subtle lightening, `*0.16`, capped). Tune the per-chapter step or
+  the `HUE_FALLBACK` palette there. The Act-3 **mega band** (`.stage::before`, `--mega-col` set in
+  `state.js`) is the super-chapter cue — tune its `opacity: .6` / `height: 3px`.
 - **Connection graph edges:** Act 3 `.world-edge` (and Act 2 `.idx-edge`) are tinted by group colour;
   tune Act-3 faintness via `.world-edge { opacity: .22 }`. Edges show only on the `messy`/`focus`
   stops — `state.js` calls `Canvas.edges(...)`, off for the Act-4 grid.

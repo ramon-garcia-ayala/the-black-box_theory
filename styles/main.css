@@ -474,17 +474,14 @@ body[data-step="0"] .fx-scanlines { display: none !important; }
 }
 .team-eyebrow { font: 700 clamp(11px, 1.3vw, 15px)/1 var(--font-cond); letter-spacing: 6px; text-transform: uppercase; color: rgba(255,255,255,.8); margin: 0; }
 .team-row { display: flex; gap: clamp(14px, 3vw, 48px); align-items: flex-start; flex-wrap: wrap; justify-content: center; }
-.team-card { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 14px; }
-.team-photo {
-  width: clamp(120px, 16vw, 220px); aspect-ratio: 1 / 1; overflow: hidden;
-  border: 1px solid rgba(255,255,255,.55);
-}
+.team-row .team-card.item { position: static; left: auto; top: auto; transform: none; margin: 0; width: clamp(140px, 17vw, 230px); }
+.team-card .win { width: 100%; }
+.team-photo { aspect-ratio: 1 / 1; overflow: hidden; background: var(--blue); }
 .team-photo img {
   width: 100%; height: 100%; object-fit: cover; display: block;
   filter: grayscale(1) contrast(1.05);
   mix-blend-mode: luminosity;
 }
-.team-card figcaption { font: 700 clamp(12px, 1.2vw, 16px)/1.2 var(--font-mono); letter-spacing: 1px; text-transform: uppercase; color: #fff; text-align: center; }
 
 /* corner margin notes — dim, low-contrast, lightly staggered */
 .inote { position: absolute; width: min(300px, 30vw); }
@@ -577,8 +574,11 @@ body[data-step="0"] .fx-scanlines { display: none !important; }
   border-bottom: 1px solid var(--hair);
 }
 .wb-dot { width: 9px; height: 9px; flex: 0 0 auto; background: var(--paper); box-shadow: inset 0 0 0 1px var(--hair); }
+/* group chip: explicit "which group/chapter" cue on every window's title bar (G1, G2, …) —
+   a dark inset pill that stays legible on any mega-group hue/shade. */
+.wb-grp { flex: 0 0 auto; font: 700 8px/1 var(--font-cond); letter-spacing: .5px; color: #fff; background: rgba(0, 0, 0, .32); padding: 2px 4px; border-radius: 2px; }
 .wb-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.wb-btns { display: flex; gap: 2px; }
+.wb-btns { display: flex; gap: 2px; pointer-events: none; }   /* decorative only — no button does anything */
 .wb-btns i { width: 14px; height: 12px; background: var(--paper); color: var(--ink); font-style: normal; font: 700 8px/12px var(--font-cond); text-align: center; box-shadow: inset 0 0 0 1px var(--hair); }
 .wb-x { font-weight: 700; }
 .winbody { flex: 1; min-height: 0; position: relative; overflow: hidden; background: var(--paper); }
@@ -688,6 +688,17 @@ body[data-step="0"] .fx-scanlines { display: none !important; }
 .ft-idx { font: 700 13px/1 var(--font-mono); color: var(--blue); }
 .ft-name { font: 700 12px/1 var(--font-cond); letter-spacing: 2px; text-transform: uppercase; color: var(--ink); max-width: 60vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+/* ---- MEGA-GROUP BAND ----
+   A thin top accent in the current mega-group's base hue while walking its chapters (Act 3).
+   Subtle super-chapter cue: it stays the same colour across a mega-group's groups, so a hue
+   change quietly signals "new super-chapter". --mega-col is set per stop in state.js. */
+.stage::before {
+  content: ''; position: absolute; left: 0; top: 0; height: 3px; width: 100%;
+  background: var(--mega-col, transparent); z-index: 540; pointer-events: none;
+  opacity: 0; transition: opacity .5s var(--ease), background-color .5s var(--ease);
+}
+body[data-mega]:not([data-mega=""]) .stage::before { opacity: .6; }
+
 /* ---- RATIONALIZATION ---- */
 .rationalize { position: absolute; inset: 0; z-index: 60; display: grid; place-items: center; opacity: 0; visibility: hidden; transition: opacity .6s var(--ease); pointer-events: none; padding: 5vw; background: rgba(255,255,255,.66); backdrop-filter: blur(9px); -webkit-backdrop-filter: blur(9px); }
 .rationalize.show { opacity: 1; visibility: visible; }
@@ -746,10 +757,36 @@ body[data-step="0"] .fx-scanlines { display: none !important; }
    NAV / PROGRESS — thin taskbar
    ============================================================ */
 .nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 550; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 8px; background: var(--paper); box-shadow: inset 0 1px 0 var(--hair); }
-.progress { display: flex; gap: 5px; flex: 1; justify-content: center; flex-wrap: wrap; }
-.pdot { width: 10px; height: 10px; background: var(--paper); box-shadow: inset 0 0 0 1px var(--hair); transition: background .3s, transform .3s; }
-.pdot.done { background: var(--blue); box-shadow: inset 0 0 0 1px var(--blue); }
-.pdot.active { background: var(--magenta); box-shadow: inset 0 0 0 1px var(--magenta); transform: scale(1.3); }
+/* PROGRESS BAR — a compact, structural MAP of the whole run that rebuilds itself from the
+   live sequence. Each stop is a clickable dot coloured by its mega-group hue / group shade
+   (so the bar mirrors the content's order); group entries are taller ticks and a new
+   mega-group is set off by a gap. One single row that scrolls the active dot into view, so it
+   stays compact no matter how many megas / groups / slides there are. */
+.progress { flex: 1; min-width: 0; display: flex; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; -ms-overflow-style: none; }
+.progress::-webkit-scrollbar { display: none; }
+.progress-track { display: flex; align-items: center; gap: 4px; margin: auto; padding: 6px 2px; }
+.pdot {
+  --dc: var(--blue);
+  width: 8px; height: 8px; flex: 0 0 auto; padding: 0; border: 0; cursor: pointer;
+  background: var(--paper); box-shadow: inset 0 0 0 1px var(--hair);
+  transition: background .3s, box-shadow .3s, transform .25s, width .3s, height .3s;
+}
+.pdot:hover { transform: scale(1.3); }
+.pdot.done { background: var(--dc); box-shadow: inset 0 0 0 1px var(--dc); }
+.pdot.active { background: var(--dc); box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--dc); transform: scale(1.35); animation: pdotpulse 1.5s var(--ease) infinite; }
+/* group entry = a taller tick that labels the start of a group/chapter */
+.pdot.group-start { width: 5px; height: 14px; }
+/* a new mega-group (super-chapter) is set apart with a gap */
+.pdot.mega-start { margin-left: 13px; }
+/* special (non-content) stops keep neutral tones */
+.pdot.k-intro, .pdot.k-team { --dc: #9aa3bd; }
+.pdot.k-index { --dc: var(--ink); width: 10px; height: 10px; }
+.pdot.k-grid, .pdot.k-gridlog { --dc: var(--ink); }
+.pdot.k-chat { --dc: var(--blue); border-radius: 50%; }
+@keyframes pdotpulse {
+  0%, 100% { box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--dc); }
+  50%      { box-shadow: 0 0 0 2px var(--paper), 0 0 0 5px var(--dc); }
+}
 .btn-nav { min-width: 96px; }
 
 /* ============================================================
@@ -795,6 +832,7 @@ body[data-step="0"] .fx-scanlines { display: none !important; }
 .idx-node .win { width: 100%; height: 100%; box-shadow: none; }
 .idx-node .winbar { background: var(--gc, #9aa3bd); text-shadow: 0 1px 0 rgba(0, 0, 0, .28); }
 .idx-node .wb-title { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.idx-node .wb-grp { font-size: 6px; padding: 1px 2px; letter-spacing: 0; }
 .idx-node .winbody img, .idx-node .winbody video { width: 100%; height: 100%; object-fit: cover; display: block; }
 /* text cards: same notepad look as Act 3, but the type is scaled WAY down to suit the small
    index windows (≈ the same text-to-window ratio as the full-size Act-3 cards). */

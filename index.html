@@ -171,21 +171,29 @@
         <div class="team-screen">
           <p class="team-eyebrow">THE TEAM</p>
           <div class="team-row">
-            <figure class="team-card">
-              <div class="team-photo"><img src="/assets/team/rania.png" alt="Rania Chihaoui"></div>
-              <figcaption>Rania Chihaoui</figcaption>
+            <figure class="item team-card">
+              <div class="win">
+                <div class="winbar"><span class="wb-dot"></span><span class="wb-title">RANIA CHIHAOUI</span><span class="wb-btns"><i>_</i><i>&#9633;</i><i class="wb-x">&#10005;</i></span></div>
+                <div class="winbody team-photo"><img src="/assets/team/rania.png" alt="Rania Chihaoui"></div>
+              </div>
             </figure>
-            <figure class="team-card">
-              <div class="team-photo"><img src="/assets/team/andrea.png" alt="Andrea Cutroni"></div>
-              <figcaption>Andrea Cutroni</figcaption>
+            <figure class="item team-card">
+              <div class="win">
+                <div class="winbar"><span class="wb-dot"></span><span class="wb-title">ANDREA CUTRONI</span><span class="wb-btns"><i>_</i><i>&#9633;</i><i class="wb-x">&#10005;</i></span></div>
+                <div class="winbody team-photo"><img src="/assets/team/andrea.png" alt="Andrea Cutroni"></div>
+              </div>
             </figure>
-            <figure class="team-card">
-              <div class="team-photo"><img src="/assets/team/edu.png" alt="Eduardo Martinez"></div>
-              <figcaption>Eduardo Martinez</figcaption>
+            <figure class="item team-card">
+              <div class="win">
+                <div class="winbar"><span class="wb-dot"></span><span class="wb-title">EDUARDO MARTINEZ</span><span class="wb-btns"><i>_</i><i>&#9633;</i><i class="wb-x">&#10005;</i></span></div>
+                <div class="winbody team-photo"><img src="/assets/team/edu.png" alt="Eduardo Martinez"></div>
+              </div>
             </figure>
-            <figure class="team-card">
-              <div class="team-photo"><img src="/assets/team/ramon.png" alt="Ramon Garcia"></div>
-              <figcaption>Ramon Garcia</figcaption>
+            <figure class="item team-card">
+              <div class="win">
+                <div class="winbar"><span class="wb-dot"></span><span class="wb-title">RAMON GARCIA</span><span class="wb-btns"><i>_</i><i>&#9633;</i><i class="wb-x">&#10005;</i></span></div>
+                <div class="winbody team-photo"><img src="/assets/team/ramon.png" alt="Ramon Garcia"></div>
+              </div>
             </figure>
           </div>
         </div>
@@ -217,10 +225,6 @@
       <svg id="idxEdges" class="idx-edges" aria-hidden="true"></svg>
       <div id="idxNodes" class="idx-nodes"></div>
       <div class="idx-ui">
-        <div class="idx-head">
-          <span class="idx-kicker">THE INDEX</span>
-          <span class="idx-hint">Hover to isolate a group · click to enter it · scroll to zoom · right-drag to pan</span>
-        </div>
         <div id="idxLegend" class="idx-legend"></div>
       </div>
     </section>
@@ -254,7 +258,7 @@
   <!-- ===== NAV (taskbar) ===== -->
   <nav class="nav">
     <button id="prevBtn" class="btn btn-nav" disabled>◂ BACK</button>
-    <div id="progress" class="progress" aria-hidden="true"></div>
+    <div id="progress" class="progress" role="tablist" aria-label="Jump to any step"></div>
     <button id="nextBtn" class="btn btn-nav btn-next" data-text="NEXT">NEXT ▸</button>
   </nav>
 

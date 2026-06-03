@@ -42,9 +42,11 @@
     Canvas.groupsPresent().forEach((g) => {
       const folders = foldersOfGroup(g);
       if (!folders.length) return;
-      seq.push({ act: 3, name: 'THE MESSY CANVAS', kind: 'messy', group: g, count: folders.length });
+      const s0 = Canvas.slides()[folders[0]] || {};
+      const meta = { mega: s0.mega || 0, chapter: s0.chapter || 0, gnum: s0.gnum || 0, colorKey: s0.colorKey || 0, shadeStep: s0.shadeStep || 0 };
+      seq.push({ act: 3, name: 'THE MESSY CANVAS', kind: 'messy', group: g, count: folders.length, ...meta });
       folders.forEach((fi, li) => {
-        seq.push({ act: 3, name: 'RATIONALIZING', kind: 'focus', group: g, localIdx: li, folder: fi, count: folders.length });
+        seq.push({ act: 3, name: 'RATIONALIZING', kind: 'focus', group: g, localIdx: li, folder: fi, count: folders.length, ...meta });
       });
     });
     // Act 4 is two stops: first ALL items assemble into the ordered grid (no phrase yet),
@@ -59,19 +61,68 @@
     body.style.setProperty('--clean', (total > 0 ? step / total : 0).toFixed(3));
   }
 
-  function buildProgress() {
-    progress.innerHTML = '';
-    for (let i = 0; i <= total; i++) {
-      const d = document.createElement('span');
-      d.className = 'pdot';
-      progress.appendChild(d);
+  let pdots = [];
+
+  // A readable tooltip for each stop — so the bar doubles as a clickable table of contents.
+  function stopLabel(p) {
+    const grp = p.gnum || p.group;
+    switch (p.kind) {
+      case 'intro': return 'Act 1 · The Box';
+      case 'team': return 'Act 1 · The Team';
+      case 'index': return 'Act 2 · The Index';
+      case 'messy': return (p.mega ? `Mega ${p.mega} · ` : '') + `Group ${grp} — start`;
+      case 'focus': {
+        const s = Canvas.slides()[p.folder];
+        const idx = s ? String(s.index).padStart(2, '0') : '';
+        return (p.mega ? `M${p.mega}·` : '') + `G${grp} · slide ${idx}`;
+      }
+      case 'grid': return 'Act 4 · Rationalized grid';
+      case 'gridlog': return 'Act 4 · The line';
+      case 'chat': return 'Act 5 · The Rationalizer';
+      default: return p.name || '';
     }
   }
+
+  // Rebuild the bar from the live sequence: one clickable dot per stop, coloured/shaped by what
+  // it is. Content dots (messy/focus) take their group's mega-hue + chapter-shade; a group entry
+  // is a taller tick; a new mega-group is set apart by a gap. Grows/recolours automatically as
+  // mega-groups, groups or slides are added.
+  function buildProgress() {
+    progress.innerHTML = '';
+    const track = document.createElement('div');
+    track.className = 'progress-track';
+    pdots = [];
+    let prevMega = null;
+    seq.forEach((p, i) => {
+      const d = document.createElement('button');
+      d.type = 'button';
+      d.className = 'pdot k-' + p.kind;
+      const isContent = p.kind === 'messy' || p.kind === 'focus';
+      if (isContent && p.colorKey && Canvas.color) d.style.setProperty('--dc', Canvas.color(p.colorKey, p.shadeStep || 0));
+      if (p.kind === 'messy') d.classList.add('group-start');
+      const mega = p.mega || 0;
+      if (isContent && mega && mega !== prevMega) d.classList.add('mega-start');   // super-chapter boundary
+      prevMega = isContent ? mega : null;
+      d.title = stopLabel(p);
+      d.setAttribute('aria-label', d.title);
+      d.addEventListener('click', () => go(i));
+      track.appendChild(d);
+      pdots.push(d);
+    });
+    progress.appendChild(track);
+  }
   function paintProgress() {
-    Array.from(progress.children).forEach((d, i) => {
+    pdots.forEach((d, i) => {
       d.classList.toggle('done', i < step);
       d.classList.toggle('active', i === step);
     });
+    // keep the active dot centred in the compact strip (scroll only the bar, not the page)
+    const a = pdots[step];
+    if (a) {
+      const ar = a.getBoundingClientRect(), cr = progress.getBoundingClientRect();
+      const delta = (ar.left + ar.width / 2) - (cr.left + cr.width / 2);
+      if (Math.abs(delta) > 1) progress.scrollBy({ left: delta, behavior: 'smooth' });
+    }
   }
 
   function apply(forward) {
@@ -80,6 +131,13 @@
     body.dataset.act = String(p.act);
     actLabel.textContent = `ACT ${p.act} / 5 · ${p.name}`;
     setClean();
+
+    // subtle super-chapter cue: a thin top band in the current MEGA-group's base hue, shown
+    // only while walking that mega-group's chapters (Act 3 messy/focus). Constant across a
+    // mega-group's chapters (uses shadeStep 0 = base hue) so it reads as one super-chapter.
+    const onMega = (p.kind === 'messy' || p.kind === 'focus') && p.mega;
+    body.dataset.mega = onMega ? String(p.mega) : '';
+    if (onMega && Canvas.color) body.style.setProperty('--mega-col', Canvas.color(p.colorKey, 0));
 
     introWin.classList.toggle('hidden', p.kind !== 'intro');
     if (teamWin) {
@@ -106,13 +164,16 @@
     } else if (p.kind === 'messy') {
       Canvas.setScope(p.group);
       if (forward) Canvas.scatterZoomView(); else Canvas.scatterView();   // zoom-in entrance going forward
-      folderLabel.textContent = `GROUP ${String(p.group).padStart(2, '0')} // ${p.count} SLIDE${p.count === 1 ? '' : 'S'}`;
+      const g2 = String(p.gnum || p.group).padStart(2, '0');
+      folderLabel.textContent = p.mega
+        ? `MEGA ${String(p.mega).padStart(2, '0')} · GROUP ${g2} // ${p.count} SLIDE${p.count === 1 ? '' : 'S'}`
+        : `GROUP ${g2} // ${p.count} SLIDE${p.count === 1 ? '' : 'S'}`;
     } else if (p.kind === 'focus') {
       Canvas.setScope(p.group);
       Canvas.focusView(p.localIdx);
       const s = Canvas.slides()[p.folder];
       const idx = s ? String(s.index).padStart(2, '0') : '--';
-      folderLabel.textContent = `G${p.group}·${idx} / ${p.count}`;
+      folderLabel.textContent = p.mega ? `M${p.mega}·G${p.gnum}·${idx} / ${p.count}` : `G${p.gnum || p.group}·${idx} / ${p.count}`;
     } else if (p.kind === 'grid' || p.kind === 'gridlog') {
       Canvas.setScope(null); Canvas.gridView();      // ALL groups assemble, ordered + coloured
       folderLabel.textContent = p.kind === 'gridlog' ? 'RATIONALIZED' : 'ORDER // COMPLETE';
