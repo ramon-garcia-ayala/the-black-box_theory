@@ -526,7 +526,7 @@ body[data-step="0"] .fx-scanlines { display: none !important; }
 /* group-coloured connection graph behind the canvas windows (Act 3 / 4). Stroke colour is
    set per line in canvas.js; sits below every window (z 0) and its lines follow them live. */
 .world-edges { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; overflow: visible; }
-.world-edge { stroke-width: 1.4; opacity: .5; }
+.world-edge { stroke-width: 1.2; opacity: .22; }
 
 .load-state { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font: 700 18px/1 var(--font-cond); letter-spacing: 2px; text-transform: uppercase; color: var(--blue); z-index: 5; }
 .blink { animation: blink 1s steps(1) infinite; }
@@ -539,11 +539,12 @@ body[data-step="0"] .fx-scanlines { display: none !important; }
 .win {
   width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden;
   background: var(--paper); padding: 0;
-  box-shadow: inset 0 0 0 1px var(--hair);
-  transition: background-color .45s var(--ease), box-shadow .45s var(--ease);
+  border: 1px solid #000;                 /* every element window: one thin black outline, no shadow */
+  box-shadow: none;
+  transition: background-color .45s var(--ease);
 }
-.item .win { box-shadow: inset 0 0 0 1px var(--hair); }
-.item .win:hover { box-shadow: inset 0 0 0 1px var(--blue), 0 0 0 1px var(--blue); }
+.item .win { box-shadow: none; }
+.item .win:hover { box-shadow: none; }
 .winbar {
   height: 19px; flex: 0 0 19px; display: flex; align-items: center; gap: 5px; padding: 0 3px 0 5px;
   color: #fff; font: 700 10px/19px var(--font-cond); letter-spacing: .8px; text-transform: uppercase;
@@ -628,10 +629,10 @@ body[data-step="0"] .fx-scanlines { display: none !important; }
 .item::before, .item::after { display: none; content: none; }
 
 .item.dragging { transition: none; z-index: 9999 !important; }
-.item.dragging .win { box-shadow: inset 0 0 0 1px var(--blue), 0 0 0 2px var(--blue); }
+.item.dragging .win { box-shadow: none; }
 
-/* the folder that just snapped into place gets a thin blue marker (then settles) */
-.item.fresh .win { box-shadow: inset 0 0 0 1px var(--blue), 0 0 0 1px var(--blue); }
+/* all element windows keep the same thin black frame — no blue marker, no shadow */
+.item.fresh .win { box-shadow: none; }
 
 /* PAST slides (earlier folders already placed): the WHOLE window — blue title bar
    included — washes toward WHITE. The window stays 100% OPAQUE (no transparency): a
@@ -766,7 +767,7 @@ body[data-step="0"] .fx-scanlines { display: none !important; }
   background: transparent; cursor: none; will-change: transform;
   transition: opacity .25s var(--ease), filter .25s var(--ease);
 }
-.idx-node .win { width: 100%; height: 100%; box-shadow: inset 0 0 0 1px var(--hair), 0 6px 16px rgba(8, 16, 48, .12); transition: box-shadow .25s var(--ease); }
+.idx-node .win { width: 100%; height: 100%; box-shadow: none; }
 .idx-node .winbar { background: var(--gc, #9aa3bd); text-shadow: 0 1px 0 rgba(0, 0, 0, .28); }
 .idx-node .wb-title { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .idx-node .winbody img, .idx-node .winbody video { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -775,10 +776,10 @@ body[data-step="0"] .fx-scanlines { display: none !important; }
 .idx-node .textcard { padding: 5px 6px; font-size: 6.5px; line-height: 1.45; }
 .idx-node.idx-broken .winbody { background: repeating-linear-gradient(45deg, #f3f4fa 0 6px, #e9ebf5 6px 12px); }
 .idx-node:focus-visible { outline: none; }
-.idx-node:hover .win, .idx-node:focus-visible .win { box-shadow: inset 0 0 0 1px var(--gc), 0 10px 24px rgba(8, 16, 48, .20); }
+.idx-node:hover .win, .idx-node:focus-visible .win { box-shadow: none; }
 .idx-node.dim { opacity: .1; filter: grayscale(.95); }
 .idx-node.lit { z-index: 5; }
-.idx-node.lit .win { box-shadow: inset 0 0 0 1px var(--gc), 0 12px 28px rgba(8, 16, 48, .22); }
+.idx-node.lit .win { box-shadow: none; }
 
 /* head + legend chrome */
 .idx-ui { position: absolute; inset: 0; z-index: 3; pointer-events: none; }

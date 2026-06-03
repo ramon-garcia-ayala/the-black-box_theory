@@ -45,7 +45,10 @@
         seq.push({ act: 3, name: 'RATIONALIZING', kind: 'focus', group: g, localIdx: li, folder: fi, count: folders.length });
       });
     });
-    seq.push({ act: 4, name: 'RATIONALIZED', kind: 'grid' });     // all groups, one ordered grid + the punch line
+    // Act 4 is two stops: first ALL items assemble into the ordered grid (no phrase yet),
+    // then a second NEXT lets the punch line emerge over that same grid.
+    seq.push({ act: 4, name: 'RATIONALIZED', kind: 'grid' });
+    seq.push({ act: 4, name: 'RATIONALIZED', kind: 'gridlog' });
     seq.push({ act: 5, name: 'THE RATIONALIZER', kind: 'chat' });
     total = seq.length - 1;
   }
@@ -78,8 +81,9 @@
 
     introWin.classList.toggle('hidden', p.kind !== 'intro');
     if (window.IndexGraph) { if (p.kind === 'index') IndexGraph.show(); else IndexGraph.hide(); }
-    // the group-coloured canvas graph shows on the messy / focus / final-grid stops
-    if (Canvas.edges) Canvas.edges(p.kind === 'messy' || p.kind === 'focus' || p.kind === 'grid');
+    // the group-coloured canvas graph shows only while a group is being opened (messy / focus);
+    // the Act-4 ordered grid is clean — no connecting lines.
+    if (Canvas.edges) Canvas.edges(p.kind === 'messy' || p.kind === 'focus');
 
     // the blurred backdrop only behind the intro splash, the zoomed focus hero, and the chat
     if (scrim) scrim.classList.toggle('show', p.kind === 'intro' || p.kind === 'focus' || p.kind === 'chat');
@@ -100,16 +104,17 @@
       const s = Canvas.slides()[p.folder];
       const idx = s ? String(s.index).padStart(2, '0') : '--';
       folderLabel.textContent = `G${p.group}·${idx} / ${p.count}`;
-    } else if (p.kind === 'grid') {
+    } else if (p.kind === 'grid' || p.kind === 'gridlog') {
       Canvas.setScope(null); Canvas.gridView();      // ALL groups assemble, ordered + coloured
-      folderLabel.textContent = 'ORDER // COMPLETE';
+      folderLabel.textContent = p.kind === 'gridlog' ? 'RATIONALIZED' : 'ORDER // COMPLETE';
     } else {
       Canvas.setScope(null); Canvas.gridView();
       folderLabel.textContent = 'AWAITING_INPUT';
     }
 
-    rationalize.classList.toggle('show', p.kind === 'grid');
-    rationalize.setAttribute('aria-hidden', p.kind === 'grid' ? 'false' : 'true');
+    // the punch line emerges only on the second Act-4 stop (over the already-assembled grid)
+    rationalize.classList.toggle('show', p.kind === 'gridlog');
+    rationalize.setAttribute('aria-hidden', p.kind === 'gridlog' ? 'false' : 'true');
 
     const chatOpen = p.kind === 'chat';
     if (chatModal) {
@@ -125,8 +130,9 @@
       step >= total ? 'END'
         : p.kind === 'index' ? 'ENTER ▸'
           : (nextStop && nextStop.kind === 'grid') ? 'RATIONALIZE ▸'
-            : p.kind === 'grid' ? 'ASK ▸'
-              : 'NEXT ▸';
+            : p.kind === 'grid' ? 'REVEAL ▸'
+              : p.kind === 'gridlog' ? 'ASK ▸'
+                : 'NEXT ▸';
 
     paintProgress();
     if (window.Glitch && Glitch.burst) Glitch.burst();

@@ -218,7 +218,7 @@
       if (n.type !== 'text' || !n.el) return;
       const tc = n.el.querySelector('.textcard');
       if (!tc) return;
-      const c = { tc, item: n.el, manual: false, prog: false };
+      const c = { tc, item: n.el, manual: false, prog: false, active: false, t0: 0 };
       const stop = () => { c.manual = true; };
       tc.addEventListener('wheel', stop, { passive: true });
       tc.addEventListener('touchstart', stop, { passive: true });
@@ -229,19 +229,31 @@
     });
     if (!cards.length) return;
 
-    const period = 16000;                 // full down+up cycle (ms)
-    const dHold = 0.08, dEnd = 0.46, uHold = 0.54;   // pauses at top/bottom
+    // One down+up cycle, but the DESCENT is slow and the ASCENT is quick.
+    // Fractions of the period (must sum to 1): pause-top · down(slow) · pause-bottom · up(fast).
+    const period = 20000;
+    const fTopHold = 0.06, fDown = 0.58, fBotHold = 0.06, fUp = 0.30;
+    const dStart = fTopHold, dEnd = dStart + fDown;
+    const uStart = dEnd + fBotHold;            // up runs uStart → 1.0
     function frame(t) {
       for (const c of cards) {
-        if (c.manual || c.item.classList.contains('past')) continue;   // dimmed/taken-over hold still
+        // A window is "active" only while it is the zoomed hero of the moment (the `fresh`
+        // window). That way the descent always (re)starts from the top each time it zooms in.
+        const active = c.item.classList.contains('fresh');
+        if (active && !c.active) {             // just became the hero → always start from the top
+          c.active = true; c.manual = false; c.t0 = t; c.prog = true; c.tc.scrollTop = 0;
+        } else if (!active && c.active) {
+          c.active = false;
+        }
+        if (!active || c.manual) continue;     // out-of-view / reader took over → hold still
         const max = c.tc.scrollHeight - c.tc.clientHeight;
         if (max <= 1) continue;
-        const ph = (t % period) / period;
+        const ph = (((t - c.t0) % period) + period) % period / period;
         let p;
-        if (ph < dHold) p = 0;
-        else if (ph < dEnd) p = (ph - dHold) / (dEnd - dHold);
-        else if (ph < uHold) p = 1;
-        else p = 1 - (ph - uHold) / (1 - uHold);
+        if (ph < dStart) p = 0;                          // hold at top
+        else if (ph < dEnd) p = (ph - dStart) / fDown;   // descend (slow)
+        else if (ph < uStart) p = 1;                     // hold at bottom
+        else p = 1 - (ph - uStart) / fUp;                // ascend (fast)
         const e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;   // ease in-out
         const target = Math.round(e * max);
         if (target !== Math.round(c.tc.scrollTop)) { c.prog = true; c.tc.scrollTop = target; }
