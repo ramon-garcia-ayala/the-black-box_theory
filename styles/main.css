@@ -804,6 +804,14 @@ body[data-mega]:not([data-mega=""]) .stage::before { opacity: .6; }
 .rat-dim { color: var(--sh); font-weight: 400; }
 .rat-big { font-family: var(--font-disp); font-weight: 400; font-style: normal; font-size: clamp(26px, 5vw, 60px); margin-top: 16px; color: var(--blue); text-transform: uppercase; }
 
+/* ACT 4 — the panel reframed as an audience QUESTION (lead + a list of prompts). */
+.rat-inner--q { padding: 7vh 5vw; }
+.rat-q-lead { font-family: var(--font-disp); font-weight: 400; font-size: clamp(26px, 4.6vw, 56px); line-height: 1.05; color: var(--ink); text-transform: uppercase; margin: 0 0 30px; }
+.rat-q-lead .hl { color: var(--blue); }
+.rat-q-list { list-style: none; margin: 0 auto; padding: 0; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.rat-q-list li { font-family: var(--font-mono); font-weight: 700; font-size: clamp(16px, 2.6vw, 34px); line-height: 1.15; color: var(--blue); white-space: nowrap; }
+.rat-q-list li::before { content: "▸ "; color: var(--magenta); }
+
 /* ACT 3 — exclusive lone-text panel (important statement / audience question). Same dialog
    chrome + zoom-in as the Act-4 panel, but layered ABOVE the zoomed Act-3 hero (z 520) and
    below the nav (z 550) so it fully takes over the screen for that slide. */
