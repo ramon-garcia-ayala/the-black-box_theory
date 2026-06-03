@@ -1,0 +1,16 @@
+Term 1: Black box.
+
+For Simondon:
+a technical object used without understanding.
+
+For del Campo:
+the AI image can also become a black box.
+
+Behind the image:
+dataset
+model
+training
+latent space
+selection
+
+Opening the box means reading the process behind the image.

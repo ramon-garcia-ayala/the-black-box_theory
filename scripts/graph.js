@@ -15,7 +15,7 @@
 
   let nodes = [];     // { el, group, w, h, r, bx, by, fx, fy, ph, amp, sp }
   let edges = [];     // { line, a, b }
-  let built = false, running = false, raf = 0, t0 = 0;
+  let built = false, running = false, raf = 0, t0 = 0, entrancePlayed = false;
   let W = 0, H = 0;
   const view = { x: 0, y: 0, s: 1 };   // viewport pan (x,y) + zoom (s) — Rhino-style controls
   let controlsWired = false;
@@ -102,11 +102,16 @@
       body.appendChild(v);
       media = v;
     } else {
+      // carousel → show its first frame (the index is just a map; navigation lives in Act 3)
+      const src = it.type === 'carousel' ? (it.frames && it.frames[0] && it.frames[0].src) : it.src;
       const img = document.createElement('img');
-      img.src = it.src; img.alt = ''; img.loading = 'lazy'; img.decoding = 'async';
+      img.src = src; img.alt = ''; img.loading = 'lazy'; img.decoding = 'async';
       img.addEventListener('error', () => { el.classList.add('idx-broken'); });
       body.appendChild(img);
       media = img;
+      if (it.type === 'carousel' && it.frames) {
+        const t = document.createElement('span'); t.className = 'gif-tag'; t.textContent = '❏ ' + it.frames.length; body.appendChild(t);
+      }
     }
     win.appendChild(bar); win.appendChild(body); el.appendChild(win);
 
@@ -118,7 +123,7 @@
     el.addEventListener('click', () => pick(g));
     layer.appendChild(el);
 
-    const n = { el, group: g, color, u, w, h, r: Math.max(w, h) / 2, bx: 0, by: 0, fx: 0, fy: 0, ph: Math.random() * Math.PI * 2, amp: 3 + Math.random() * 5, sp: 0.4 + Math.random() * 0.6 };
+    const n = { el, group: g, color, u, w, h, r: Math.max(w, h) / 2, bx: 0, by: 0, fx: 0, fy: 0, ph: Math.random() * Math.PI * 2, amp: 2 + Math.random() * 3, sp: 0.25 + Math.random() * 0.35 };
 
     // give each image/video window its media's ORIGINAL orientation once dimensions are known
     if (media && it.type === 'video') {
@@ -258,7 +263,7 @@
   /* ---------- interaction ---------- */
   // Isolate a group: dim every other group's nodes + edges, lift the chosen group.
   // Toggling classes directly keeps this scalable to any number of groups (no CSS enum).
-  function highlight(g) {
+  function applyHighlight(g) {
     const on = g != null;
     host.classList.toggle('isolating', on);
     for (const n of nodes) {
@@ -274,8 +279,33 @@
       b.classList.toggle('active', on && Number(b.dataset.group || 0) === g);
     });
   }
+
+  // Hover changes apply immediately; the smooth 3s fade (see .idx-node / .idx-edge transitions)
+  // does all the easing — groups dim out and the hovered one lifts in softly, with no lock,
+  // regardless of which one was on before.
+  function highlight(g) { applyHighlight(g == null ? null : g); }
+  function resetHighlight() { applyHighlight(null); }
+  // First-appearance entrance: the nodes "turn on" one by one in a soft, staggered order, then
+  // settle into the normal state (the class is removed when each finishes). The edge layer fades
+  // in alongside. Opacity/filter only — the float transform keeps running untouched.
+  function playEntrance() {
+    const spread = 950;                       // total window over which nodes light up
+    for (const n of nodes) {
+      const d = Math.random() * spread;
+      n.el.style.animationDelay = d.toFixed(0) + 'ms';
+      n.el.classList.add('idx-enter');
+      const done = () => { n.el.classList.remove('idx-enter'); n.el.style.animationDelay = ''; n.el.removeEventListener('animationend', done); };
+      n.el.addEventListener('animationend', done);
+    }
+    if (svg) {                                // edges fade in a touch after the first nodes
+      svg.style.opacity = '0';
+      svg.style.transition = 'opacity .9s var(--ease)';
+      setTimeout(() => { svg.style.opacity = '1'; }, 260);
+      setTimeout(() => { svg.style.transition = ''; svg.style.opacity = ''; }, 260 + 1200);
+    }
+  }
   function pick(g) {
-    highlight(null);
+    resetHighlight();
     if (window.Present && Present.pickGroup) Present.pickGroup(g);
   }
 
@@ -364,8 +394,9 @@
       resetView();
       host.classList.add('show');
       host.setAttribute('aria-hidden', 'false');
-      highlight(null);
+      resetHighlight();
       if (!running) { running = true; t0 = 0; raf = requestAnimationFrame(tick); }
+      if (!entrancePlayed) { entrancePlayed = true; playEntrance(); }
     },
     hide() {
       host.classList.remove('show');

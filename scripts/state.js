@@ -11,11 +11,14 @@
   const openBtn = document.getElementById('openBtn');
   const nextBtn = document.getElementById('nextBtn');
   const prevBtn = document.getElementById('prevBtn');
+  const fsBtn = document.getElementById('fsBtn');
   const actLabel = document.getElementById('actLabel');
+  const hudTitle = document.getElementById('hudTitle');
   const folderLabel = document.getElementById('folderLabel');
   const progress = document.getElementById('progress');
   const introWin = document.getElementById('introWin');
   const teamWin = document.getElementById('teamWin');
+  const matiasWin = document.getElementById('matiasWin');
   const scrim = document.getElementById('scrim');
   const chatModal = document.getElementById('chatModal');
   const chatClose = document.getElementById('chatClose');
@@ -24,6 +27,16 @@
   const bigTextTitle = document.getElementById('bigTextTitle');
   const bigTextKicker = document.getElementById('bigTextKicker');
   const bigTextBody = document.getElementById('bigTextBody');
+  const bigSeq = document.getElementById('bigSeq');
+  const bigSeqTitle = document.getElementById('bigSeqTitle');
+  const bigSeqImg = document.getElementById('bigSeqImg');
+  const bigSeqCount = document.getElementById('bigSeqCount');
+  const bigSeqText = document.getElementById('bigSeqText');
+  const bigSeqPrev = document.getElementById('bigSeqPrev');
+  const bigSeqNext = document.getElementById('bigSeqNext');
+
+  // HUD title per mega-group (top-left). Unlisted megas fall back to "GROUP N".
+  const MEGA_NAMES = { 1: 'INTRODUCTION', 4: 'THE CONDUCTOR' };
 
   let seq = [];        // ordered list of stops (see buildSequence)
   let step = 0;
@@ -42,6 +55,7 @@
     seq = [];
     seq.push({ act: 1, name: 'THE BOX', kind: 'intro' });
     seq.push({ act: 1, name: 'THE TEAM', kind: 'team' });
+    seq.push({ act: 1, name: 'SPAN · MATIAS DEL CAMPO', kind: 'matias' });
     seq.push({ act: 2, name: 'THE INDEX', kind: 'index' });
     // Act 3 walks one MEGA-GROUP (section) at a time, in sequence — its messy canvas holds ALL
     // its chapters' slides, then NEXT steps through each slide (group then slide order within
@@ -90,12 +104,79 @@
     bigText.setAttribute('aria-hidden', 'true');
   }
 
+  // A slide that contains a numbered image SEQUENCE (carousel) opens in a LARGE exclusive viewer:
+  // a dominant image stage + bottom arrows, with the folder's text shown smaller underneath.
+  function carouselOf(s) { return s && s.items ? s.items.find((it) => it.type === 'carousel') : null; }
+  let seqFrames = [], seqCur = 0;
+  function seqShow(i) {
+    const n = seqFrames.length; if (!n) return;
+    seqCur = ((i % n) + n) % n;
+    if (bigSeqImg) bigSeqImg.src = seqFrames[seqCur].src;
+    if (bigSeqCount) bigSeqCount.textContent = (seqCur + 1) + ' / ' + n;
+  }
+  if (bigSeqPrev) bigSeqPrev.addEventListener('click', () => seqShow(seqCur - 1));
+  if (bigSeqNext) bigSeqNext.addEventListener('click', () => seqShow(seqCur + 1));
+  function showBigSeq(s, car) {
+    if (!bigSeq) return;
+    seqFrames = car.frames || [];
+    if (bigSeqTitle) bigSeqTitle.textContent = ((s.name || 'SEQUENCE') + ' · ' + car.name).toUpperCase();
+    const txt = s.items.find((it) => it.type === 'text');
+    if (bigSeqText) bigSeqText.textContent = txt ? (txt.text || '').trim() : '';
+    seqShow(0);
+    bigSeq.classList.add('show');
+    bigSeq.setAttribute('aria-hidden', 'false');
+    if (seqScroller) seqScroller.restart();   // text scroll (re)starts from the top
+  }
+  function hideBigSeq() {
+    if (!bigSeq) return;
+    bigSeq.classList.remove('show');
+    bigSeq.setAttribute('aria-hidden', 'true');
+  }
+
+  // Same auto-scroll as the Act-3 text windows (canvas.js setupTextAutoScroll): while the panel
+  // is shown the copy descends slowly from the top, holds, then returns up quickly — restarting
+  // from the top each time the panel (re)opens, and stopping the instant the reader scrolls it.
+  function makePanelAutoScroll(el, isActive) {
+    if (!el) return { restart() {} };
+    let manual = false, prog = false, active = false, t0 = 0;
+    const stop = () => { manual = true; };
+    el.addEventListener('wheel', stop, { passive: true });
+    el.addEventListener('touchstart', stop, { passive: true });
+    el.addEventListener('scroll', () => { if (prog) { prog = false; return; } manual = true; });
+    const period = 20000, fTopHold = 0.06, fDown = 0.58, fBotHold = 0.06, fUp = 0.30;
+    const dStart = fTopHold, dEnd = dStart + fDown, uStart = dEnd + fBotHold;
+    function frame(t) {
+      const on = isActive();
+      if (on && !active) { active = true; manual = false; t0 = t; prog = true; el.scrollTop = 0; }
+      else if (!on && active) { active = false; }
+      if (on && !manual) {
+        const max = el.scrollHeight - el.clientHeight;
+        if (max > 1) {
+          const ph = (((t - t0) % period) + period) % period / period;
+          let p;
+          if (ph < dStart) p = 0;
+          else if (ph < dEnd) p = (ph - dStart) / fDown;
+          else if (ph < uStart) p = 1;
+          else p = 1 - (ph - uStart) / fUp;
+          const e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+          const target = Math.round(e * max);
+          if (target !== Math.round(el.scrollTop)) { prog = true; el.scrollTop = target; }
+        }
+      }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+    return { restart() { manual = false; active = false; } };
+  }
+  const seqScroller = makePanelAutoScroll(bigSeqText, () => !!(bigSeq && bigSeq.classList.contains('show')));
+
   // A readable tooltip for each stop — so the bar doubles as a clickable table of contents.
   function stopLabel(p) {
     const grp = p.gnum || p.group;
     switch (p.kind) {
       case 'intro': return 'Act 1 · The Box';
       case 'team': return 'Act 1 · The Team';
+      case 'matias': return 'Act 1 · Matias del Campo (SPAN)';
       case 'index': return 'Act 2 · The Index';
       case 'messy': return p.mega ? `Mega-group ${p.mega} — start` : `Group ${grp} — start`;
       case 'focus': {
@@ -166,10 +247,27 @@
     body.dataset.mega = onMega ? String(p.mega) : '';
     if (onMega && Canvas.color) body.style.setProperty('--mega-col', Canvas.color(p.colorKey, 0));
 
+    // HUD title reflects the mega-group you're inside: mega 1 = INTRODUCTION, others = GROUP N,
+    // coloured in that mega's hue. The framing acts keep the default title.
+    if (hudTitle) {
+      if (onMega) {
+        hudTitle.textContent = MEGA_NAMES[p.mega] || ('GROUP ' + p.mega);
+        hudTitle.style.color = Canvas.color ? Canvas.color(p.colorKey || p.mega, 0) : '';
+      } else {
+        hudTitle.textContent = 'INSIDE_THE_BLACK_BOX';
+        hudTitle.style.color = '';
+      }
+      hudTitle.setAttribute('data-text', hudTitle.textContent);
+    }
+
     introWin.classList.toggle('hidden', p.kind !== 'intro');
     if (teamWin) {
       teamWin.classList.toggle('hidden', p.kind !== 'team');
       teamWin.setAttribute('aria-hidden', p.kind === 'team' ? 'false' : 'true');
+    }
+    if (matiasWin) {
+      matiasWin.classList.toggle('hidden', p.kind !== 'matias');
+      matiasWin.setAttribute('aria-hidden', p.kind === 'matias' ? 'false' : 'true');
     }
     if (window.IndexGraph) { if (p.kind === 'index') IndexGraph.show(); else IndexGraph.hide(); }
     // the group-coloured canvas graph shows only while a group is being opened (messy / focus);
@@ -185,6 +283,9 @@
     } else if (p.kind === 'team') {
       Canvas.setScope(null); Canvas.scatterView();
       folderLabel.textContent = 'TEAM // 04';
+    } else if (p.kind === 'matias') {
+      Canvas.setScope(null); Canvas.scatterView();
+      folderLabel.textContent = 'SPAN // MATIAS DEL CAMPO';
     } else if (p.kind === 'index') {
       Canvas.setScope(null);
       folderLabel.textContent = `INDEX // ${N} SLIDE${N === 1 ? '' : 'S'}`;
@@ -212,9 +313,13 @@
     rationalize.classList.toggle('show', p.kind === 'gridlog');
     rationalize.setAttribute('aria-hidden', p.kind === 'gridlog' ? 'false' : 'true');
 
-    // exclusive panel for a lone-text Act-3 slide (important statement / audience question)
+    // exclusive Act-3 panels: a numbered sequence opens the LARGE viewer; a lone text file opens
+    // the statement/question panel; otherwise neither.
     const fs = p.kind === 'focus' ? Canvas.slides()[p.folder] : null;
-    if (fs && isLoneText(fs)) showBigText(fs); else hideBigText();
+    const car = fs ? carouselOf(fs) : null;
+    if (car) { showBigSeq(fs, car); hideBigText(); }
+    else if (fs && isLoneText(fs)) { showBigText(fs); hideBigSeq(); }
+    else { hideBigText(); hideBigSeq(); }
 
     const chatOpen = p.kind === 'chat';
     if (chatModal) {
@@ -260,6 +365,23 @@
   nextBtn.addEventListener('click', next);
   prevBtn.addEventListener('click', prev);
   if (chatClose) chatClose.addEventListener('click', prev);
+
+  // full-screen toggle (bottom-right, left of NEXT)
+  if (fsBtn) {
+    const fsEl = document.documentElement;
+    const isFs = () => document.fullscreenElement || document.webkitFullscreenElement;
+    const enter = () => (fsEl.requestFullscreen || fsEl.webkitRequestFullscreen || (() => {})).call(fsEl);
+    const exit = () => (document.exitFullscreen || document.webkitExitFullscreen || (() => {})).call(document);
+    const paintFs = () => {
+      const on = !!isFs();
+      fsBtn.title = on ? 'Exit full screen' : 'Full screen';   // glyph ⛶ stays; active state shows via class
+      fsBtn.classList.toggle('is-fs', on);
+    };
+    fsBtn.addEventListener('click', () => { if (isFs()) exit(); else enter(); });
+    document.addEventListener('fullscreenchange', paintFs);
+    document.addEventListener('webkitfullscreenchange', paintFs);
+    paintFs();
+  }
 
   window.addEventListener('keydown', (e) => {
     if (e.target.closest('input, textarea')) return;

@@ -112,7 +112,7 @@
 
   <!-- ===== HUD ===== -->
   <header class="hud">
-    <div class="hud-title glitch" data-text="INSIDE_THE_BLACK_BOX">INSIDE_THE_BLACK_BOX</div>
+    <div class="hud-title glitch" id="hudTitle" data-text="INSIDE_THE_BLACK_BOX">INSIDE_THE_BLACK_BOX</div>
     <div class="hud-meta">
       <span class="hud-chip" id="actLabel">ACT 1 / 4 · THE BOX</span>
       <span class="hud-chip hud-chip-alt" id="folderLabel">SYS://READY</span>
@@ -196,6 +196,40 @@
               </div>
             </figure>
           </div>
+          <p class="team-tagline">Curious to understand — and take apart — the black box.</p>
+        </div>
+      </div>
+
+      <!-- matias: an explanatory profile of Matias del Campo (SPAN) — same blue/window aesthetic
+           as THE TEAM, adapted to a portrait + write-up layout (still part of Act 1). -->
+      <div id="matiasWin" class="team-win matias-win hidden" aria-hidden="true">
+        <div class="team-screen">
+          <p class="team-eyebrow">SPAN · ARCHITECTURE &amp; ARTIFICIAL INTELLIGENCE</p>
+          <div class="matias-row">
+            <figure class="item matias-card">
+              <div class="win">
+                <div class="winbar"><span class="wb-dot"></span><span class="wb-title">MATIAS DEL CAMPO</span><span class="wb-btns"><i>_</i><i>&#9633;</i><i class="wb-x">&#10005;</i></span></div>
+                <div class="winbody team-photo"><img src="/assets/matias/matias.jpg" alt="Matias del Campo"></div>
+              </div>
+            </figure>
+
+            <div class="matias-info">
+              <h2 class="matias-name">MATIAS DEL CAMPO</h2>
+              <p class="matias-role">Architect · designer · educator — co-founder of <b>SPAN</b> (Vienna, 2003), with Sandra Manninger.</p>
+              <ul class="matias-points">
+                <li>A pioneer of <b>architecture + artificial intelligence</b>: he designs with neural networks, GANs and image generators (diffusion models).</li>
+                <li>Professor at <b>Taubman College, University of Michigan</b>, where he directs the <b>AR2IL</b> lab (Architecture &amp; Artificial Intelligence).</li>
+                <li>Editor/author on the field — incl. <i>Neural Architecture</i> and AD issues on machine learning in design.</li>
+                <li>His work asks how the machine's "black box" reshapes authorship and form — squarely the question of this transmission.</li>
+              </ul>
+              <figure class="item matias-logo">
+                <div class="win">
+                  <div class="winbar"><span class="wb-dot"></span><span class="wb-title">SPAN.STUDIO</span><span class="wb-btns"><i>_</i><i>&#9633;</i><i class="wb-x">&#10005;</i></span></div>
+                  <div class="winbody matias-logo-body"><img src="/assets/matias/span_logo.webp" alt="SPAN — architecture & design"></div>
+                </div>
+              </figure>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -227,6 +261,27 @@
           <div class="rat-inner bigtext-inner">
             <p class="rat-kicker" id="bigTextKicker">KEY TEXT</p>
             <p class="bigtext-body" id="bigTextBody"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACT 3 — exclusive LARGE viewer for a numbered image sequence (carousel). One frame at a
+           time, advanced only by the bottom arrows; the folder's text shows smaller below. -->
+      <div id="bigSeq" class="bigseq" aria-hidden="true">
+        <div class="win rat-win" role="dialog" aria-label="Image sequence">
+          <div class="winbar"><span class="wb-dot"></span><span class="wb-title" id="bigSeqTitle">SEQUENCE</span><span class="wb-btns"><i>_</i><i>&#9633;</i><i class="wb-x">&#10005;</i></span></div>
+          <div class="bigseq-body">
+            <div class="bigseq-main">
+              <div class="bigseq-stage"><img id="bigSeqImg" alt=""></div>
+              <div class="winfoot bigseq-foot">
+                <button type="button" class="cz-btn" id="bigSeqPrev" aria-label="Previous">&#9664;</button>
+                <span class="cz-count" id="bigSeqCount"></span>
+                <button type="button" class="cz-btn" id="bigSeqNext" aria-label="Next">&#9654;</button>
+              </div>
+            </div>
+            <div class="bigseq-side">
+              <p class="bigseq-text" id="bigSeqText"></p>
+            </div>
           </div>
         </div>
       </div>
@@ -271,6 +326,7 @@
   <nav class="nav">
     <button id="prevBtn" class="btn btn-nav" disabled>◂ BACK</button>
     <div id="progress" class="progress" role="tablist" aria-label="Jump to any step"></div>
+    <button id="fsBtn" class="btn btn-nav btn-fs" title="Full screen" aria-label="Toggle full screen">&#9974;</button>
     <button id="nextBtn" class="btn btn-nav btn-next" data-text="NEXT">NEXT ▸</button>
   </nav>
 

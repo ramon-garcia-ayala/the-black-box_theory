@@ -16,6 +16,9 @@
   let nodes = [];
   let W = 0;
   let H = 0;
+  let currentView = { kind: 'scatter', idx: 0 };   // last applied view — re-applied when media resizes
+  let reflowTimer = 0;
+  let entranceUntil = 0;          // while a zoom-in entrance is playing, defer reflows past it
   let scopeSection = null;        // null = everything; else present only this SECTION (mega-group)
 
   // group-coloured connection graph (mirrors the Act-2 index; edges follow the windows)
@@ -79,13 +82,46 @@
   // updating it here is picked up the next time a view is applied; we also resize in place now.
   function applyOrientation(node, natW, natH) {
     if (!natW || !natH) return;
-    const h = Math.round(Math.max(node.w * 0.5, Math.min(node.w * 1.7, node.w * (natH / natW))));
+    // never let a single window be taller than ~70% of the viewport, so it always fits vertically
+    const cap = (H || innerHeight) * 0.70;
+    const h = Math.round(Math.min(cap, Math.max(node.w * 0.5, Math.min(node.w * 1.7, node.w * (natH / natW)))));
     if (h === node.h) return;
     node.h = h;
     if (node.el) {
       node.el.style.height = h + 'px';
       node.el.style.transform = `translate(${node.x}px, ${node.y}px) translate(-50%, -50%) scale(${node.scale})`;
     }
+    reflowSoon();   // re-fit the layout with the media's real size (so it stays on-screen)
+  }
+
+  // Re-apply the current view after media loads / resizes (debounced). Deterministic layouts
+  // (fixed scatter seed, computed grid/focus) mean positions don't jump — they just re-fit to
+  // the now-known window sizes, keeping every window inside the viewport. Skipped while a window
+  // is magnified (its FLIP animation owns the transform).
+  function reflowSoon() {
+    if (maximizedNode) return;
+    clearTimeout(reflowTimer);
+    const wait = Math.max(80, entranceUntil - Date.now() + 40);   // wait out any zoom-in entrance
+    reflowTimer = setTimeout(() => {
+      if (maximizedNode) return;
+      measure();
+      // grid/focus are structured layouts that pack by height + scale to fit → recompute them.
+      // scatter is free placement → only NUDGE any window that now sticks out back on-screen
+      // (keeps the messy arrangement stable instead of reshuffling on every image load).
+      if (currentView.kind === 'focus') focus(currentView.idx);
+      else if (currentView.kind === 'grid') grid();
+      else clampScatter();
+      render();
+    }, wait);
+  }
+  // keep every in-scope scattered window fully inside the viewport (used after media resizes)
+  function clampScatter() {
+    nodes.forEach((n) => {
+      if (!inScope(n) || n.hidden) return;
+      const padX = n.w * 0.5 + 8, padY = n.h * 0.5 + 8;
+      n.x = n.sx = Math.max(padX, Math.min(Math.max(padX, W - padX), n.sx));
+      n.y = n.sy = Math.max(padY, Math.min(Math.max(padY, H - padY), n.sy));
+    });
   }
 
   function DEMO() {
@@ -120,7 +156,7 @@
     // group chip in the title bar (G1, G2, …) — explicit per-window cue for which group/chapter
     // this slide belongs to, so groups inside one mega-group are distinguishable at a glance.
     const grpChip = node.gnum ? `<span class="wb-grp">G${node.gnum}</span>` : '';
-    bar.innerHTML = `<span class="wb-dot"></span>${grpChip}<span class="wb-title">${esc(title)}</span><span class="wb-btns"><i>_</i><i>&#9633;</i><i class="wb-x">&#10005;</i></span>`;
+    bar.innerHTML = `<span class="wb-dot"></span>${grpChip}<span class="wb-title">${esc(title)}</span><span class="wb-btns"><i class="wb-min" title="Restore">_</i><i class="wb-max" title="Magnify">&#9633;</i><i class="wb-x">&#10005;</i></span>`;
     const body = document.createElement('div');
     body.className = 'winbody';
 
@@ -132,6 +168,12 @@
       inner.textContent = item.text || '';
       tc.appendChild(inner);
       body.appendChild(tc);
+    } else if (item.type === 'carousel') {
+      // a numbered image sequence → one window showing a single frame at a time, advanced ONLY
+      // by the prev/next buttons in a bottom panel (same window chrome). Frame orientation is
+      // taken from the FIRST image once (kept fixed so the window doesn't jump while flipping);
+      // each frame is shown with `contain` so the whole numbered image is visible.
+      buildCarousel(node, item, body, win);
     } else if (item.type === 'video') {
       const v = document.createElement('video');
       v.src = item.src; v.muted = true; v.loop = true; v.autoplay = true;
@@ -148,10 +190,145 @@
       body.appendChild(img);
       if (item.type === 'gif') { const t = document.createElement('span'); t.className = 'gif-tag'; t.textContent = 'GIF'; body.appendChild(t); }
     }
-    win.appendChild(bar); win.appendChild(body); fig.appendChild(win);
+    win.appendChild(bar); win.appendChild(body);
+    if (node._foot) win.appendChild(node._foot);     // carousel nav panel sits below the body
+    fig.appendChild(win);
     world.appendChild(fig);
     node.el = fig;
     enableDrag(node);
+
+    // ⊡ magnify / _ restore — the only two working window buttons (close stays decorative).
+    const maxBtn = bar.querySelector('.wb-max');
+    const minBtn = bar.querySelector('.wb-min');
+    if (maxBtn) {
+      maxBtn.addEventListener('pointerdown', (e) => e.stopPropagation());   // don't start a drag
+      maxBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleMax(node); });
+    }
+    if (minBtn) {
+      minBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+      minBtn.addEventListener('click', (e) => { e.stopPropagation(); if (node === maximizedNode) closeMax(); });
+    }
+  }
+
+  /* ---------- magnify a window to a centered popup ----------
+     A FLIP zoom: opening grows the popup FROM the source window's exact on-screen rect to the
+     centered large size; closing reverses it back into the source window. The animated transform
+     (Web Animations API) overrides the maximized CSS without touching the node's canvas inline
+     transform, so restoring drops cleanly back to its place. */
+  const MAG_EASE = 'cubic-bezier(.2, .8, .2, 1)';
+  let maximizedNode = null;
+  let magScrim = null;
+  function ensureMagScrim() {
+    if (magScrim) return magScrim;
+    magScrim = document.createElement('div');
+    magScrim.id = 'magScrim';
+    magScrim.addEventListener('click', closeMax);
+    (document.getElementById('stage') || document.body).appendChild(magScrim);
+    return magScrim;
+  }
+  // transform that makes the (left:50%/top:50%, origin 0 0) maximized box appear AT rect r
+  function rectTransform(r, bw, bh) {
+    const sx = Math.max(0.04, r.width / bw), sy = Math.max(0.04, r.height / bh);
+    return `translate(${(r.left - innerWidth / 2).toFixed(1)}px, ${(r.top - innerHeight / 2).toFixed(1)}px) scale(${sx.toFixed(4)}, ${sy.toFixed(4)})`;
+  }
+  const CENTERED = 'translate(-50%, -50%)';
+  const MAG_DUR = 360;
+  // The maximized window hugs its CONTENT's exact aspect (no letterbox): media → its natural
+  // ratio scaled to fit the viewport; text → a comfortable readable box. Returns {w,h} incl. chrome.
+  function maxSize(node) {
+    const el = node.el;
+    const bar = el.querySelector('.winbar'); const barH = bar ? bar.offsetHeight : 19;
+    const foot = el.querySelector('.winfoot'); const footH = foot ? foot.offsetHeight : 0;
+    const maxW = Math.round(innerWidth * 0.92);
+    const maxH = Math.round(innerHeight * 0.90);
+    if (node.type === 'text') return { w: Math.min(maxW, 760), h: Math.min(maxH, 640) };
+    const media = el.querySelector('.winbody img, .winbody video');
+    let aw = node.w, ah = Math.max(1, node.h - barH - footH);   // fallback: current frame
+    if (media) {
+      const nw = media.naturalWidth || media.videoWidth, nh = media.naturalHeight || media.videoHeight;
+      if (nw && nh) { aw = nw; ah = nh; }
+    }
+    const availH = maxH - barH - footH;
+    let dispW = maxW, dispH = dispW * (ah / aw);
+    if (dispH > availH) { dispH = availH; dispW = dispH * (aw / ah); }
+    return { w: Math.round(dispW), h: Math.round(dispH + barH + footH) };
+  }
+  function restoreSize(node) { node.el.style.width = node.w + 'px'; node.el.style.height = node.h + 'px'; }
+  function maximize(node) {
+    killMax();
+    const el = node.el;
+    node._srcRect = el.getBoundingClientRect();          // the source window's exact rect
+    el.classList.add('maximized');
+    const sz = maxSize(node);                            // size the frame to the content exactly
+    el.style.width = sz.w + 'px'; el.style.height = sz.h + 'px';
+    ensureMagScrim().classList.add('show');
+    maximizedNode = node;
+    const start = rectTransform(node._srcRect, el.offsetWidth, el.offsetHeight);
+    node._anim = el.animate(
+      [{ transformOrigin: '0 0', transform: start }, { transformOrigin: '0 0', transform: CENTERED }],
+      { duration: MAG_DUR, easing: MAG_EASE, fill: 'forwards' }
+    );
+  }
+  function closeMax() {
+    const node = maximizedNode;
+    if (!node) return;
+    maximizedNode = null;
+    const el = node.el;
+    const dest = node._srcRect || el.getBoundingClientRect();
+    if (magScrim) magScrim.classList.remove('show');
+    if (node._anim) { node._anim.cancel(); node._anim = null; }
+    const end = rectTransform(dest, el.offsetWidth, el.offsetHeight);   // zoom back down to source
+    const anim = el.animate(
+      [{ transformOrigin: '0 0', transform: CENTERED }, { transformOrigin: '0 0', transform: end }],
+      { duration: MAG_DUR, easing: MAG_EASE, fill: 'forwards' }
+    );
+    const done = () => { el.classList.remove('maximized'); restoreSize(node); anim.cancel(); };   // back to canvas
+    anim.onfinish = done; anim.oncancel = () => { el.classList.remove('maximized'); restoreSize(node); };
+  }
+  function killMax() {                                    // instant teardown (on navigation)
+    if (maximizedNode) {
+      const el = maximizedNode.el;
+      if (maximizedNode._anim) { maximizedNode._anim.cancel(); maximizedNode._anim = null; }
+      el.classList.remove('maximized');
+      restoreSize(maximizedNode);
+      maximizedNode = null;
+    }
+    if (magScrim) magScrim.classList.remove('show');
+  }
+  function toggleMax(node) { if (node === maximizedNode) closeMax(); else maximize(node); }
+
+  // The numbered-sequence viewer: one frame at a time + a bottom nav panel (prev / counter /
+  // next) in the window's own chrome. Advances ONLY on button click (no auto-play).
+  function buildCarousel(node, item, body) {
+    const frames = item.frames || [];
+    node.frames = frames; node.cur = 0;
+
+    const img = document.createElement('img');
+    img.className = 'cz-img'; img.alt = ''; img.loading = 'lazy'; img.decoding = 'async';
+    let oriented = false;
+    img.addEventListener('load', () => { if (!oriented) { oriented = true; applyOrientation(node, img.naturalWidth, img.naturalHeight); } });
+    img.addEventListener('error', () => { img.replaceWith(brokenTile((frames[node.cur] && frames[node.cur].name) || 'IMG')); });
+    body.appendChild(img);
+
+    const foot = document.createElement('div');
+    foot.className = 'winfoot';
+    foot.innerHTML = '<button type="button" class="cz-btn cz-prev" aria-label="Previous">&#9664;</button><span class="cz-count"></span><button type="button" class="cz-btn cz-next" aria-label="Next">&#9654;</button>';
+    const countEl = foot.querySelector('.cz-count');
+    const prev = foot.querySelector('.cz-prev');
+    const next = foot.querySelector('.cz-next');
+    const show = (i) => {
+      const n = frames.length; if (!n) return;
+      node.cur = ((i % n) + n) % n;
+      img.src = frames[node.cur].src;
+      countEl.textContent = (node.cur + 1) + ' / ' + n;
+    };
+    // a button press must NOT start a window drag, nor bubble as a canvas interaction
+    const stop = (e) => e.stopPropagation();
+    [prev, next].forEach((b) => b.addEventListener('pointerdown', stop));
+    prev.addEventListener('click', (e) => { e.stopPropagation(); show(node.cur - 1); });
+    next.addEventListener('click', (e) => { e.stopPropagation(); show(node.cur + 1); });
+    node._foot = foot;
+    show(0);
   }
   function brokenTile(title) {
     const d = document.createElement('div');
@@ -176,7 +353,7 @@
       const color = slideColor(s.colorKey, s.shadeStep);
       (s.items || []).forEach((item, ii) => {
         const sz = sizeFor(item.type, gi);
-        const node = { type: item.type, group: s.group || 0, section: s.section || 0, gnum: s.gnum || 0, mega: s.mega || 0, chapter: s.chapter || 0, color, folder: fi, ii, gi: gi++, w: sz.w, h: sz.h, x: 0, y: 0, sx: 0, sy: 0, rot: 0, scale: 1, z: 1, op: 1, blur: 0, glitchy: true, delay: 0 };
+        const node = { type: item.type, group: s.group || 0, section: s.section || 0, gnum: s.gnum || 0, mega: s.mega || 0, chapter: s.chapter || 0, color, frames: item.frames || null, cur: 0, folder: fi, ii, gi: gi++, w: sz.w, h: sz.h, x: 0, y: 0, sx: 0, sy: 0, rot: 0, scale: 1, z: 1, op: 1, blur: 0, glitchy: true, delay: 0 };
         makeItem(node, item);
         nodes.push(node);
       });
@@ -263,8 +440,8 @@
     function frame(t) {
       for (const c of cards) {
         // A window is "active" only while it is the zoomed hero of the moment (the `fresh`
-        // window). That way the descent always (re)starts from the top each time it zooms in.
-        const active = c.item.classList.contains('fresh');
+        // window) AND not magnified — a maximized window stays perfectly still.
+        const active = c.item.classList.contains('fresh') && !c.item.classList.contains('maximized');
         if (active && !c.active) {             // just became the hero → always start from the top
           c.active = true; c.manual = false; c.t0 = t; c.prog = true; c.tc.scrollTop = 0;
         } else if (!active && c.active) {
@@ -450,6 +627,7 @@
   // itself on the screen". Out-of-scope items fade away. Used entering Act 3 / each group.
   function scatterZoom() {
     measure();
+    entranceUntil = Date.now() + 1100;   // ~stagger (.28s) + transform transition — defer reflows
     scatter();          // compute scattered targets for in-scope; hide the rest
     render();           // commit z-index / classes / out-of-scope fade-out
     nodes.forEach((n) => {
@@ -547,9 +725,9 @@
     },
     edges(on) { setEdges(on); },
     color(colorKey, shadeStep) { return slideColor(colorKey, shadeStep); },
-    scatterView() { measure(); scatter(); render(); hideFolderTitle(); },
-    scatterZoomView() { scatterZoom(); hideFolderTitle(); },
-    focusView(localIdx) { measure(); focus(localIdx); render(); },
-    gridView() { measure(); grid(); render(); }
+    scatterView() { currentView = { kind: 'scatter', idx: 0 }; killMax(); measure(); scatter(); render(); hideFolderTitle(); },
+    scatterZoomView() { currentView = { kind: 'scatter', idx: 0 }; killMax(); scatterZoom(); hideFolderTitle(); },
+    focusView(localIdx) { currentView = { kind: 'focus', idx: localIdx }; killMax(); measure(); focus(localIdx); render(); },
+    gridView() { currentView = { kind: 'grid', idx: 0 }; killMax(); measure(); grid(); render(); }
   };
 })();

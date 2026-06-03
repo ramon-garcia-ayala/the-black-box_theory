@@ -1,0 +1,14 @@
+Term 3: Margin of indetermination.
+
+This is the open zone inside a technical system.
+
+It is where the machine is not fully fixed.
+
+In AI design,
+this appears in selection.
+
+The architect chooses,
+filters,
+interprets,
+edits,
+and translates outputs into architecture.
