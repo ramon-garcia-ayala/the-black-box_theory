@@ -1,5 +1,0 @@
-STYLE GAN 2 ALGORITHM
-
-Two specific dataset:
-- a modern facade dataset
-- a plan dataset

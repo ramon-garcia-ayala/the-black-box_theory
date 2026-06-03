@@ -1,3 +1,0 @@
-THE GOAL
-
-To intentionally use overfitting or data scarcity to create the uncanny
