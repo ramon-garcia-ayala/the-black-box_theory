@@ -1,0 +1,17 @@
+To understand this let's bring it to an example:
+
+as we have del campo with us today let's bring it to AI
+
+Let's take a look at the Robot Garden
+
+an outdoor garden at the University of Michigan's Robotics building, inaugurated in 2021
+
+It is revolutionary because the design of the ground and the textures of the garden were not 
+designed by an architect sitting with a mouse. 
+
+What they did was take satellite images of the terrain, train a neural network with thousands 
+of images of architectural elements 
+
+and then let the network dream those elements onto the image of the site.
+
+
