@@ -1,18 +1,5 @@
-and now let's look at
+and now let's look at this images:
 
 In the case of AI, data centers, and computational infrastructure 
 are often kept far from view, almost invisible to the people who use them every day.
 
-This is where Simondon identifies two opposite yet 
-closely related ways of avoiding a genuine understanding of technical objects.
-
-We either ignore them completely, treating them as black boxes whose inner workings do not concern us.
-
-Or we elevate them to something almost mythical, attributing to them powers they do not actually possess.
-
-In both cases, the result is the same: we fail to understand the machine itself. 
-
-We either dismiss it or worship it, but rarely do we engage with it
-
-
-which bring us to our next relevation
