@@ -1,0 +1,6 @@
+STYLEGAN 2 ALGORITHM ON TWO DISTINCT DATASASET:
+
+- a modern facade dataset
+- a plan dataset
+
+The GOAL of the deep learning process was to intentionally achieve OVERFITTING or data scarcity to create the estrangement 
