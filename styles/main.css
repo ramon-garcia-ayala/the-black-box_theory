@@ -640,7 +640,7 @@ body[data-step="0"] .fx-scanlines { display: none !important; }
 .type-gif .gif-tag { background: var(--magenta); }
 /* text windows keep a real vertical scrollbar; their copy auto-scrolls (JS, ping-pong),
    and the moment the reader uses the scrollbar that one window's auto-scroll stops. */
-.textcard { padding: 10px 12px; height: 100%; overflow-y: auto; overflow-x: hidden; background: var(--paper); color: var(--ink); font: 400 14px/1.5 var(--font-mono); }
+.textcard { padding: 10px 12px; height: 100%; overflow-y: auto; overflow-x: hidden; background: var(--paper); color: var(--ink); font: 400 10px/1.5 var(--font-mono); }
 .textscroll { white-space: pre-wrap; word-break: break-word; }
 .textcard::-webkit-scrollbar { width: 12px; }
 .textcard::-webkit-scrollbar-track { background: var(--paper); box-shadow: inset 0 0 0 1px var(--sh); }
