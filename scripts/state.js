@@ -35,6 +35,9 @@
   const bigSeqPrev = document.getElementById('bigSeqPrev');
   const bigSeqNext = document.getElementById('bigSeqNext');
 
+  // HUD title per mega-group (top-left). Unlisted megas fall back to "GROUP N".
+  const MEGA_NAMES = { 1: 'INTRODUCTION', 4: 'THE CONDUCTOR' };
+
   let seq = [];        // ordered list of stops (see buildSequence)
   let step = 0;
   let total = 0;
@@ -248,7 +251,7 @@
     // coloured in that mega's hue. The framing acts keep the default title.
     if (hudTitle) {
       if (onMega) {
-        hudTitle.textContent = p.mega === 1 ? 'INTRODUCTION' : ('GROUP ' + p.mega);
+        hudTitle.textContent = MEGA_NAMES[p.mega] || ('GROUP ' + p.mega);
         hudTitle.style.color = Canvas.color ? Canvas.color(p.colorKey || p.mega, 0) : '';
       } else {
         hudTitle.textContent = 'INSIDE_THE_BLACK_BOX';

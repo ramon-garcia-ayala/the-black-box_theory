@@ -1,0 +1,8 @@
+FROM NOISE TO COHERENCE
+
+GANs, diffusion models, transformers —
+their iterative transformation from noise to form
+makes the inferential logic visible.
+
+They do not imitate creativity.
+They expose its structure: feedback, calibration, emergence.
