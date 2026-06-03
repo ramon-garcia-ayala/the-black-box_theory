@@ -269,6 +269,11 @@ If no key is set, the page works fully and the chatbot returns a graceful in-cha
 - **Connection graph edges:** Act 3 `.world-edge` (and Act 2 `.idx-edge`) are tinted by group colour;
   tune Act-3 faintness via `.world-edge { opacity: .22 }`. Edges show only on the `messy`/`focus`
   stops — `state.js` calls `Canvas.edges(...)`, off for the Act-4 grid.
+- **Index hover isolation (Act 2):** the dim/un-dim fade is a slow, smooth **3s** transition
+  (`.idx-node` and `.idx-edge` `transition: opacity/filter 3s var(--ease)`). Hover applies
+  immediately (`graph.js` `highlight()` → `applyHighlight()`, no lock) and the CSS easing does all
+  the smoothing. The continuous node float is gentle (`amp 2–5px`, `sp .25–.6` in `makeNode`); the
+  index appears via the `.act-index` `.32s` fade.
 - **Past-slide veil (Act 3):** `.item.past .win::after` is a **solid white overlay over the whole
   window** (bar + content) — tune its `opacity`. The `past`/`fresh` flags are set in `canvas.js`
   `focus()`; the current folder is the `zoomCluster()` hero. Act-4 float: `gridfloat` + per-item `--fp`.
