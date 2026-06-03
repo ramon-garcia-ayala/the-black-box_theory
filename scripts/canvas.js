@@ -120,7 +120,7 @@
     // group chip in the title bar (G1, G2, …) — explicit per-window cue for which group/chapter
     // this slide belongs to, so groups inside one mega-group are distinguishable at a glance.
     const grpChip = node.gnum ? `<span class="wb-grp">G${node.gnum}</span>` : '';
-    bar.innerHTML = `<span class="wb-dot"></span>${grpChip}<span class="wb-title">${esc(title)}</span><span class="wb-btns"><i>_</i><i>&#9633;</i><i class="wb-x">&#10005;</i></span>`;
+    bar.innerHTML = `<span class="wb-dot"></span>${grpChip}<span class="wb-title">${esc(title)}</span><span class="wb-btns"><i class="wb-min" title="Restore">_</i><i class="wb-max" title="Magnify">&#9633;</i><i class="wb-x">&#10005;</i></span>`;
     const body = document.createElement('div');
     body.className = 'winbody';
 
@@ -160,7 +160,81 @@
     world.appendChild(fig);
     node.el = fig;
     enableDrag(node);
+
+    // ⊡ magnify / _ restore — the only two working window buttons (close stays decorative).
+    const maxBtn = bar.querySelector('.wb-max');
+    const minBtn = bar.querySelector('.wb-min');
+    if (maxBtn) {
+      maxBtn.addEventListener('pointerdown', (e) => e.stopPropagation());   // don't start a drag
+      maxBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleMax(node); });
+    }
+    if (minBtn) {
+      minBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+      minBtn.addEventListener('click', (e) => { e.stopPropagation(); if (node === maximizedNode) closeMax(); });
+    }
   }
+
+  /* ---------- magnify a window to a centered popup ----------
+     A FLIP zoom: opening grows the popup FROM the source window's exact on-screen rect to the
+     centered large size; closing reverses it back into the source window. The animated transform
+     (Web Animations API) overrides the maximized CSS without touching the node's canvas inline
+     transform, so restoring drops cleanly back to its place. */
+  const MAG_EASE = 'cubic-bezier(.2, .8, .2, 1)';
+  let maximizedNode = null;
+  let magScrim = null;
+  function ensureMagScrim() {
+    if (magScrim) return magScrim;
+    magScrim = document.createElement('div');
+    magScrim.id = 'magScrim';
+    magScrim.addEventListener('click', closeMax);
+    (document.getElementById('stage') || document.body).appendChild(magScrim);
+    return magScrim;
+  }
+  // transform that makes the (left:50%/top:50%, origin 0 0) maximized box appear AT rect r
+  function rectTransform(r, bw, bh) {
+    const sx = Math.max(0.04, r.width / bw), sy = Math.max(0.04, r.height / bh);
+    return `translate(${(r.left - innerWidth / 2).toFixed(1)}px, ${(r.top - innerHeight / 2).toFixed(1)}px) scale(${sx.toFixed(4)}, ${sy.toFixed(4)})`;
+  }
+  const CENTERED = 'translate(-50%, -50%)';
+  function maximize(node) {
+    killMax();
+    const el = node.el;
+    node._srcRect = el.getBoundingClientRect();          // the source window's exact rect
+    el.classList.add('maximized');
+    ensureMagScrim().classList.add('show');
+    maximizedNode = node;
+    const start = rectTransform(node._srcRect, el.offsetWidth, el.offsetHeight);
+    node._anim = el.animate(
+      [{ transformOrigin: '0 0', transform: start }, { transformOrigin: '0 0', transform: CENTERED }],
+      { duration: 360, easing: MAG_EASE, fill: 'forwards' }
+    );
+  }
+  function closeMax() {
+    const node = maximizedNode;
+    if (!node) return;
+    maximizedNode = null;
+    const el = node.el;
+    const dest = node._srcRect || el.getBoundingClientRect();
+    if (magScrim) magScrim.classList.remove('show');
+    if (node._anim) { node._anim.cancel(); node._anim = null; }
+    const end = rectTransform(dest, el.offsetWidth, el.offsetHeight);
+    const anim = el.animate(
+      [{ transformOrigin: '0 0', transform: CENTERED }, { transformOrigin: '0 0', transform: end }],
+      { duration: 320, easing: MAG_EASE, fill: 'forwards' }
+    );
+    const done = () => { el.classList.remove('maximized'); anim.cancel(); };   // back to canvas place
+    anim.onfinish = done; anim.oncancel = () => el.classList.remove('maximized');
+  }
+  function killMax() {                                    // instant teardown (on navigation)
+    if (maximizedNode) {
+      const el = maximizedNode.el;
+      if (maximizedNode._anim) { maximizedNode._anim.cancel(); maximizedNode._anim = null; }
+      el.classList.remove('maximized');
+      maximizedNode = null;
+    }
+    if (magScrim) magScrim.classList.remove('show');
+  }
+  function toggleMax(node) { if (node === maximizedNode) closeMax(); else maximize(node); }
 
   // The numbered-sequence viewer: one frame at a time + a bottom nav panel (prev / counter /
   // next) in the window's own chrome. Advances ONLY on button click (no auto-play).
@@ -589,9 +663,9 @@
     },
     edges(on) { setEdges(on); },
     color(colorKey, shadeStep) { return slideColor(colorKey, shadeStep); },
-    scatterView() { measure(); scatter(); render(); hideFolderTitle(); },
-    scatterZoomView() { scatterZoom(); hideFolderTitle(); },
-    focusView(localIdx) { measure(); focus(localIdx); render(); },
-    gridView() { measure(); grid(); render(); }
+    scatterView() { killMax(); measure(); scatter(); render(); hideFolderTitle(); },
+    scatterZoomView() { killMax(); scatterZoom(); hideFolderTitle(); },
+    focusView(localIdx) { killMax(); measure(); focus(localIdx); render(); },
+    gridView() { killMax(); measure(); grid(); render(); }
   };
 })();

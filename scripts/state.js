@@ -16,6 +16,7 @@
   const progress = document.getElementById('progress');
   const introWin = document.getElementById('introWin');
   const teamWin = document.getElementById('teamWin');
+  const matiasWin = document.getElementById('matiasWin');
   const scrim = document.getElementById('scrim');
   const chatModal = document.getElementById('chatModal');
   const chatClose = document.getElementById('chatClose');
@@ -49,6 +50,7 @@
     seq = [];
     seq.push({ act: 1, name: 'THE BOX', kind: 'intro' });
     seq.push({ act: 1, name: 'THE TEAM', kind: 'team' });
+    seq.push({ act: 1, name: 'SPAN · MATIAS DEL CAMPO', kind: 'matias' });
     seq.push({ act: 2, name: 'THE INDEX', kind: 'index' });
     // Act 3 walks one MEGA-GROUP (section) at a time, in sequence — its messy canvas holds ALL
     // its chapters' slides, then NEXT steps through each slide (group then slide order within
@@ -169,6 +171,7 @@
     switch (p.kind) {
       case 'intro': return 'Act 1 · The Box';
       case 'team': return 'Act 1 · The Team';
+      case 'matias': return 'Act 1 · Matias del Campo (SPAN)';
       case 'index': return 'Act 2 · The Index';
       case 'messy': return p.mega ? `Mega-group ${p.mega} — start` : `Group ${grp} — start`;
       case 'focus': {
@@ -244,6 +247,10 @@
       teamWin.classList.toggle('hidden', p.kind !== 'team');
       teamWin.setAttribute('aria-hidden', p.kind === 'team' ? 'false' : 'true');
     }
+    if (matiasWin) {
+      matiasWin.classList.toggle('hidden', p.kind !== 'matias');
+      matiasWin.setAttribute('aria-hidden', p.kind === 'matias' ? 'false' : 'true');
+    }
     if (window.IndexGraph) { if (p.kind === 'index') IndexGraph.show(); else IndexGraph.hide(); }
     // the group-coloured canvas graph shows only while a group is being opened (messy / focus);
     // the Act-4 ordered grid is clean — no connecting lines.
@@ -258,6 +265,9 @@
     } else if (p.kind === 'team') {
       Canvas.setScope(null); Canvas.scatterView();
       folderLabel.textContent = 'TEAM // 04';
+    } else if (p.kind === 'matias') {
+      Canvas.setScope(null); Canvas.scatterView();
+      folderLabel.textContent = 'SPAN // MATIAS DEL CAMPO';
     } else if (p.kind === 'index') {
       Canvas.setScope(null);
       folderLabel.textContent = `INDEX // ${N} SLIDE${N === 1 ? '' : 'S'}`;
