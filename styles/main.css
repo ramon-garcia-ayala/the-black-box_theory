@@ -891,6 +891,17 @@ body[data-mega]:not([data-mega=""]) .stage::before { opacity: .6; }
 .idx-node.lit { z-index: 5; }
 .idx-node.lit .win { box-shadow: none; }
 
+/* first-appearance entrance: each node "turns on" — fades up from dark with a soft glow, in a
+   staggered order (per-node animation-delay set in graph.js). Only opacity/filter animate so the
+   per-frame float transform isn't disturbed; the class is removed when done, returning the node
+   to its normal state. */
+@keyframes idxTurnOn {
+  0%   { opacity: 0; filter: brightness(2.2) saturate(.4); }
+  60%  { opacity: 1; }
+  100% { opacity: 1; filter: none; }
+}
+.idx-node.idx-enter { animation: idxTurnOn .6s var(--ease) both; }
+
 /* head + legend chrome */
 .idx-ui { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
 .idx-head { position: absolute; top: 7.5vh; left: 50%; transform: translateX(-50%); text-align: center; display: flex; flex-direction: column; gap: 5px; }

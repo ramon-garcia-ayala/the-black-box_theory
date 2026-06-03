@@ -15,7 +15,7 @@
 
   let nodes = [];     // { el, group, w, h, r, bx, by, fx, fy, ph, amp, sp }
   let edges = [];     // { line, a, b }
-  let built = false, running = false, raf = 0, t0 = 0;
+  let built = false, running = false, raf = 0, t0 = 0, entrancePlayed = false;
   let W = 0, H = 0;
   const view = { x: 0, y: 0, s: 1 };   // viewport pan (x,y) + zoom (s) — Rhino-style controls
   let controlsWired = false;
@@ -285,6 +285,25 @@
   // regardless of which one was on before.
   function highlight(g) { applyHighlight(g == null ? null : g); }
   function resetHighlight() { applyHighlight(null); }
+  // First-appearance entrance: the nodes "turn on" one by one in a soft, staggered order, then
+  // settle into the normal state (the class is removed when each finishes). The edge layer fades
+  // in alongside. Opacity/filter only — the float transform keeps running untouched.
+  function playEntrance() {
+    const spread = 950;                       // total window over which nodes light up
+    for (const n of nodes) {
+      const d = Math.random() * spread;
+      n.el.style.animationDelay = d.toFixed(0) + 'ms';
+      n.el.classList.add('idx-enter');
+      const done = () => { n.el.classList.remove('idx-enter'); n.el.style.animationDelay = ''; n.el.removeEventListener('animationend', done); };
+      n.el.addEventListener('animationend', done);
+    }
+    if (svg) {                                // edges fade in a touch after the first nodes
+      svg.style.opacity = '0';
+      svg.style.transition = 'opacity .9s var(--ease)';
+      setTimeout(() => { svg.style.opacity = '1'; }, 260);
+      setTimeout(() => { svg.style.transition = ''; svg.style.opacity = ''; }, 260 + 1200);
+    }
+  }
   function pick(g) {
     resetHighlight();
     if (window.Present && Present.pickGroup) Present.pickGroup(g);
@@ -377,6 +396,7 @@
       host.setAttribute('aria-hidden', 'false');
       resetHighlight();
       if (!running) { running = true; t0 = 0; raf = requestAnimationFrame(tick); }
+      if (!entrancePlayed) { entrancePlayed = true; playEntrance(); }
     },
     hide() {
       host.classList.remove('show');
