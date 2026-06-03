@@ -80,14 +80,9 @@
   }
   function clear() { stopped = true; host.classList.add('gone'); }
 
-  // Drive purely off the narrative step: run the flood as the box opens (entering
-  // Act 2, step 1) and clear it the moment we advance into the first focus (step 2+).
-  const body = document.body;
-  function onStep() {
-    const s = body.dataset.step;
-    if (s === '1') start();          // box just opened → run the boot flood once
-    else if (started) clear();        // advanced on, or stepped back to Act 1 → stop it
-  }
-  new MutationObserver(onStep).observe(body, { attributes: true, attributeFilter: ['data-step'] });
-  onStep();
+  // The boot "window flood" is DISABLED: Act 3 now opens each group with a clean zoom-in
+  // entrance (canvas.js scatterZoomView), so the field must stay completely white — no
+  // flooding clones in the background. Kept here (start/clear above) only as dead code in
+  // case we ever want the effect back; nothing triggers it now.
+  void start; void clear;
 })();

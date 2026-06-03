@@ -8,6 +8,7 @@
   const world = document.getElementById('world');
   const loadState = document.getElementById('loadState');
   const folderTitle = document.getElementById('folderTitle');
+  const ftGrp = folderTitle && folderTitle.querySelector('.ft-grp');
   const ftIdx = folderTitle && folderTitle.querySelector('.ft-idx');
   const ftName = folderTitle && folderTitle.querySelector('.ft-name');
 
@@ -15,6 +16,15 @@
   let nodes = [];
   let W = 0;
   let H = 0;
+  let scopeGroup = null;          // null = all groups (full run); else present only this group
+
+  // group-coloured connection graph (mirrors the Act-2 index; edges follow the windows)
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  let edgesSvg = null, edgePairs = [], edgesOn = false, edgeRAF = 0;
+  function groupColor(g) {
+    const v = g ? getComputedStyle(document.documentElement).getPropertyValue('--grp-' + g).trim() : '';
+    return v || '#9aa3bd';
+  }
 
   /* ---------- helpers ---------- */
   function rng(seed) {
@@ -76,6 +86,7 @@
   function makeItem(node, item) {
     const fig = document.createElement('figure');
     fig.className = `item type-${item.type} glitchy`;
+    if (node.group) fig.dataset.group = node.group;   // group → header colour (see main.css)
     fig.style.width = node.w + 'px';
     fig.style.height = node.h + 'px';
     fig.style.setProperty('--fp', Math.random().toFixed(3));   // random float phase (Act 3 drift)
@@ -129,20 +140,73 @@
   function build() {
     world.innerHTML = '';
     nodes = [];
+    edgePairs = [];
     measure();
+    // edge layer sits behind the windows (z 0); lines drawn in updateEdges()
+    edgesSvg = document.createElementNS(SVGNS, 'svg');
+    edgesSvg.setAttribute('class', 'world-edges');
+    edgesSvg.style.display = 'none';
+    world.appendChild(edgesSvg);
     let gi = 0;
     slides.forEach((s, fi) => {
       (s.items || []).forEach((item, ii) => {
         const sz = sizeFor(item.type, gi);
-        const node = { type: item.type, folder: fi, ii, gi: gi++, w: sz.w, h: sz.h, x: 0, y: 0, sx: 0, sy: 0, rot: 0, scale: 1, z: 1, op: 1, blur: 0, glitchy: true, delay: 0 };
+        const node = { type: item.type, group: s.group || 0, folder: fi, ii, gi: gi++, w: sz.w, h: sz.h, x: 0, y: 0, sx: 0, sy: 0, rot: 0, scale: 1, z: 1, op: 1, blur: 0, glitchy: true, delay: 0 };
         makeItem(node, item);
         nodes.push(node);
       });
     });
+    buildEdges();
     if (loadState) loadState.style.display = 'none';
     scatter();
     render();
     setupTextAutoScroll();
+  }
+
+  /* ---------- group-coloured connection graph (Act 3 / 4) ----------
+     Each group's windows are linked (chain + skip-one) by a line in the group's colour.
+     The lines live in an SVG behind the windows and follow their live screen positions
+     every frame while shown, so the canvas reads as a graph just like the Act-2 index. */
+  function buildEdges() {
+    const byGroup = new Map();
+    nodes.forEach((n) => { const g = n.group || 0; if (!byGroup.has(g)) byGroup.set(g, []); byGroup.get(g).push(n); });
+    for (const [g, arr] of byGroup) {
+      const col = groupColor(g);
+      for (let i = 0; i < arr.length; i++) {
+        if (i + 1 < arr.length) addEdge(arr[i], arr[i + 1], col);
+        if (i + 2 < arr.length) addEdge(arr[i], arr[i + 2], col);
+      }
+    }
+  }
+  function addEdge(a, b, col) {
+    const line = document.createElementNS(SVGNS, 'line');
+    line.setAttribute('class', 'world-edge');
+    line.style.stroke = col;
+    edgesSvg.appendChild(line);
+    edgePairs.push({ a, b, line });
+  }
+  function updateEdges() {
+    if (!edgesSvg) return;
+    const wr = edgesSvg.getBoundingClientRect();
+    for (const e of edgePairs) {
+      if (e.a.hidden || e.b.hidden || !e.a.el || !e.b.el) { e.line.style.opacity = '0'; continue; }
+      const ra = e.a.el.getBoundingClientRect(), rb = e.b.el.getBoundingClientRect();
+      e.line.setAttribute('x1', (ra.left + ra.width / 2 - wr.left).toFixed(1));
+      e.line.setAttribute('y1', (ra.top + ra.height / 2 - wr.top).toFixed(1));
+      e.line.setAttribute('x2', (rb.left + rb.width / 2 - wr.left).toFixed(1));
+      e.line.setAttribute('y2', (rb.top + rb.height / 2 - wr.top).toFixed(1));
+      e.line.style.opacity = '';
+    }
+  }
+  function edgeLoop() {
+    if (!edgesOn) { edgeRAF = 0; return; }
+    updateEdges();
+    edgeRAF = requestAnimationFrame(edgeLoop);
+  }
+  function setEdges(on) {
+    edgesOn = !!on;
+    if (edgesSvg) edgesSvg.style.display = on ? '' : 'none';
+    if (on && !edgeRAF) edgeRAF = requestAnimationFrame(edgeLoop);
   }
 
   // Each active (non-dimmed) text window auto-scrolls its copy down, pauses, then back up
@@ -154,7 +218,7 @@
       if (n.type !== 'text' || !n.el) return;
       const tc = n.el.querySelector('.textcard');
       if (!tc) return;
-      const c = { tc, item: n.el, manual: false, prog: false };
+      const c = { tc, item: n.el, manual: false, prog: false, active: false, t0: 0 };
       const stop = () => { c.manual = true; };
       tc.addEventListener('wheel', stop, { passive: true });
       tc.addEventListener('touchstart', stop, { passive: true });
@@ -165,19 +229,31 @@
     });
     if (!cards.length) return;
 
-    const period = 16000;                 // full down+up cycle (ms)
-    const dHold = 0.08, dEnd = 0.46, uHold = 0.54;   // pauses at top/bottom
+    // One down+up cycle, but the DESCENT is slow and the ASCENT is quick.
+    // Fractions of the period (must sum to 1): pause-top · down(slow) · pause-bottom · up(fast).
+    const period = 20000;
+    const fTopHold = 0.06, fDown = 0.58, fBotHold = 0.06, fUp = 0.30;
+    const dStart = fTopHold, dEnd = dStart + fDown;
+    const uStart = dEnd + fBotHold;            // up runs uStart → 1.0
     function frame(t) {
       for (const c of cards) {
-        if (c.manual || c.item.classList.contains('past')) continue;   // dimmed/taken-over hold still
+        // A window is "active" only while it is the zoomed hero of the moment (the `fresh`
+        // window). That way the descent always (re)starts from the top each time it zooms in.
+        const active = c.item.classList.contains('fresh');
+        if (active && !c.active) {             // just became the hero → always start from the top
+          c.active = true; c.manual = false; c.t0 = t; c.prog = true; c.tc.scrollTop = 0;
+        } else if (!active && c.active) {
+          c.active = false;
+        }
+        if (!active || c.manual) continue;     // out-of-view / reader took over → hold still
         const max = c.tc.scrollHeight - c.tc.clientHeight;
         if (max <= 1) continue;
-        const ph = (t % period) / period;
+        const ph = (((t - c.t0) % period) + period) % period / period;
         let p;
-        if (ph < dHold) p = 0;
-        else if (ph < dEnd) p = (ph - dHold) / (dEnd - dHold);
-        else if (ph < uHold) p = 1;
-        else p = 1 - (ph - uHold) / (1 - uHold);
+        if (ph < dStart) p = 0;                          // hold at top
+        else if (ph < dEnd) p = (ph - dStart) / fDown;   // descend (slow)
+        else if (ph < uStart) p = 1;                     // hold at bottom
+        else p = 1 - (ph - uStart) / fUp;                // ascend (fast)
         const e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;   // ease in-out
         const target = Math.round(e * max);
         if (target !== Math.round(c.tc.scrollTop)) { c.prog = true; c.tc.scrollTop = target; }
@@ -187,10 +263,21 @@
     requestAnimationFrame(frame);
   }
 
+  /* ---------- group scope (the INDEX act presents one chosen group) ---------- */
+  function inScope(n) { return scopeGroup == null || (n.group || 0) === scopeGroup; }
+  // folder indices that belong to the current scope, in narrative order
+  function scopedFolderList() {
+    const seen = new Set(); const out = [];
+    nodes.forEach((n) => { if (inScope(n) && !seen.has(n.folder)) { seen.add(n.folder); out.push(n.folder); } });
+    return out;
+  }
+
   /* ---------- layouts (all upright: rot = 0) ---------- */
   function scatter() {
     const r = rng(20240131);
     nodes.forEach((n) => {
+      if (!inScope(n)) { n.hidden = true; n.op = 0; n.glitchy = false; return; }
+      n.hidden = false;
       const padX = n.w * 0.5 + 8;
       const padY = n.h * 0.5 + 8;
       n.x = n.sx = padX + r() * Math.max(1, W - padX * 2);
@@ -205,9 +292,10 @@
   // Compute each node's FINAL grid slot (gx, gy, gs). Used by both the progressive
   // focus() and the final grid() so items never jump — once placed they keep the slot.
   function gridSlots() {
-    const ordered = nodes.slice().sort((a, b) => a.folder - b.folder || a.ii - b.ii);
+    const pool = nodes.filter(inScope);
+    const ordered = pool.slice().sort((a, b) => a.folder - b.folder || a.ii - b.ii);
     const m = ordered.length || 1;
-    const baseW = (nodes[0] && nodes[0].w) || 236;
+    const baseW = (pool[0] && pool[0].w) || 236;
     const gapX = 16;
     const gapY = 16;
     const cols = Math.max(1, Math.min(m, Math.round(Math.sqrt(m * (W / Math.max(1, H)) * 1.15))));
@@ -271,16 +359,23 @@
   // Progressive arrangement: the CURRENT folder is a centered zoom (hero); folders already
   // passed settle into their final ordered-grid slot and STAY there; folders not yet
   // reached wait scattered in the back canvas (below the white scrim — softly veiled).
-  function focus(fo) {
+  // localIdx indexes into the in-scope folder list (so a group runs 0..M-1 on its own).
+  function focus(localIdx) {
     gridSlots();
-    zoomCluster(nodes.filter((n) => n.folder === fo));
+    const folders = scopedFolderList();
+    const fo = folders[localIdx];
+    const posOf = new Map(folders.map((f, i) => [f, i]));
+    zoomCluster(nodes.filter((n) => inScope(n) && n.folder === fo));
     nodes.forEach((n) => {
+      if (!inScope(n)) { n.hidden = true; n.op = 0; n.glitchy = false; n.fresh = false; n.past = false; return; }
+      n.hidden = false;
+      const pos = posOf.get(n.folder);
       if (n.folder === fo) {
         // current: centered zoom (position/scale set above) — only flags here
         n.rot = 0; n.blur = 0; n.op = 1;
         n.past = false; n.fresh = true;       // sharp, highlighted hero
         n.z = 520; n.glitchy = false; n.delay = 0.05;
-      } else if (n.folder < fo) {
+      } else if (pos < localIdx) {
         n.x = n.gx; n.y = n.gy; n.scale = n.gs;   // earlier folders settle into the ordered grid
         n.rot = 0; n.blur = 0; n.op = 1;
         n.past = true; n.fresh = false;       // white-veiled "previous slide" (still opaque)
@@ -298,6 +393,8 @@
   function grid() {
     gridSlots();
     nodes.forEach((n) => {
+      if (!inScope(n)) { n.hidden = true; n.op = 0; n.glitchy = false; n.fresh = false; n.past = false; return; }
+      n.hidden = false;
       n.x = n.gx; n.y = n.gy; n.scale = n.gs;
       n.rot = 0; n.op = 1; n.blur = 0; n.z = 10; n.glitchy = false; n.fresh = false; n.past = false;
       n.delay = n.gdelay;
@@ -317,8 +414,34 @@
       el.classList.toggle('glitchy', !!n.glitchy);
       el.classList.toggle('fresh', !!n.fresh);
       el.classList.toggle('past', !!n.past);
+      el.classList.toggle('scoped-out', !!n.hidden);
       el.style.transform = `translate(${n.x}px, ${n.y}px) translate(-50%, -50%) scale(${n.scale})`;
       n.delay = 0;
+    });
+  }
+
+  // Zoom-in entrance for a group's messy canvas: each in-scope item starts tiny + transparent
+  // exactly where it will land, then zooms up to full size (staggered) — the group "places
+  // itself on the screen". Out-of-scope items fade away. Used entering Act 3 / each group.
+  function scatterZoom() {
+    measure();
+    scatter();          // compute scattered targets for in-scope; hide the rest
+    render();           // commit z-index / classes / out-of-scope fade-out
+    nodes.forEach((n) => {
+      const el = n.el;
+      if (!el || n.hidden) return;
+      el.style.transition = 'none';
+      el.style.opacity = '0';
+      el.style.transform = `translate(${n.x}px, ${n.y}px) translate(-50%, -50%) scale(0.12)`;
+    });
+    void world.offsetWidth;   // commit the tiny start state before animating
+    nodes.forEach((n) => {
+      const el = n.el;
+      if (!el || n.hidden) return;
+      el.style.transition = '';
+      el.style.setProperty('--d', (Math.random() * 0.28).toFixed(2) + 's');   // gentle stagger
+      el.style.opacity = n.op;
+      el.style.transform = `translate(${n.x}px, ${n.y}px) translate(-50%, -50%) scale(${n.scale})`;
     });
   }
 
@@ -326,6 +449,10 @@
   function showFolderTitle(fo) {
     const s = slides[fo];
     if (!folderTitle || !s) return;
+    if (ftGrp) {
+      if (s.group) { ftGrp.textContent = 'G' + s.group; folderTitle.dataset.group = s.group; }
+      else { ftGrp.textContent = ''; folderTitle.removeAttribute('data-group'); }
+    }
     ftIdx.textContent = String(s.index).padStart(2, '0');
     ftName.textContent = (s.name || s.folder || '').toUpperCase();
     folderTitle.classList.add('show');
@@ -378,8 +505,20 @@
     load,
     count: () => slides.length,
     slides: () => slides,
+    // group scoping (driven by the INDEX act)
+    setScope(g) { scopeGroup = (g == null ? null : Number(g)); },
+    scope: () => scopeGroup,
+    scopeFolderCount() { return scopedFolderList().length; },
+    scopeSlides() { return scopedFolderList().map((fi) => slides[fi]).filter(Boolean); },
+    groupsPresent() {
+      const seen = new Set(); const out = [];
+      slides.forEach((s) => { const g = s.group || 0; if (!seen.has(g)) { seen.add(g); out.push(g); } });
+      return out;
+    },
+    edges(on) { setEdges(on); },
     scatterView() { measure(); scatter(); render(); hideFolderTitle(); },
-    focusView(fo) { measure(); focus(fo); render(); },
+    scatterZoomView() { scatterZoom(); hideFolderTitle(); },
+    focusView(localIdx) { measure(); focus(localIdx); render(); },
     gridView() { measure(); grid(); render(); }
   };
 })();

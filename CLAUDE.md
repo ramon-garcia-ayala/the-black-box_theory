@@ -13,49 +13,65 @@ rationalization screen the page is a clean, light, quiet space.
 
 ---
 
-## The concept (4 acts)
+## The concept (5 acts)
 
 | Act | Screen | Idea |
 |----|--------|------|
 | **1 — The Box** | A **full-screen electric-blue splash** (the title page). Dim monospace margin notes `{1}`–`{8}` in the four corners carry the Act-1 ideas (incl. the Barthes line *"first a gothic cathedral, then a kitchen"*); the **hero is a yellow-highlighter manifesto** whose marker boxes stick together; a small/discreet title + attribution and the **team credits** (Rania Chihaoui · Andrea Cutroni · Eduardo Martinez · Ramon Garcia). No "open" button — advance with **NEXT** / keyboard. The canvas, decor and boot flood stay **off** during Act 1. | We admire the surface; we never open it. |
-| **2 — The Messy Canvas** | Every file from `Slides_Datasets/` scattered as draggable Y2K windows. Each **NEXT** brings the next folder up as a **centered, zoomed "hero" cluster**; on the following NEXT that folder **settles into its slot in the ordered grid** and the **whole window** (blue title bar included) washes toward an opaque **white veil** (no transparency — nothing behind shows through). Active (non-veiled) windows gently **auto-scroll** their content: images pan, text cards scroll with a real scrollbar that **stops that window's auto-scroll the moment the reader uses it**. Order accumulates folder by folder; nothing already placed disappears. | The raw inside of the box, rationalized step by step. |
-| **3 — Rationalization** | A **light / white "calm" screen**: the grid images **start exactly where Act 2 left them** (no re-settle) and then **drift gently** (each window floats with its own phase); the repetitive decor switches off, and the punch line **emerges with a zoom pop** in a window (`RATIONALIZED.LOG`). | "Order where there was chaos." The transition into calm; the human as Simondon's *permanent organizer*. |
-| **4 — The Rationalizer** | A chatbot popup whose backdrop **settles into the Act-1 blue** (the `#scrim` eases to `--blue`) — everything behind is gone. The window is sized to its content (no empty band), framed by a **complete** thin hairline, and uses **soft, floating** animations: *"…now it is the AI's turn to answer — and your turn to think."* | Real AI answers, grounded in the live canvas content. The arrival of calm — full circle to the blue. |
+| **2 — The Index** | A **force-directed graph on a clean white field** of **every** item in every folder (`scripts/graph.js`), each wearing the Act-3 "web window" chrome (title bar tinted by its group; text items use the Act-3 card). Groups are **mixed into one chaotic blob** yet **hovering** any node *isolates its whole group* (the rest dims). **Wheel-zoom + right/middle-drag pan** (Rhino-style). Pressing **NEXT** (`ENTER ▸`) walks the groups **in order** (1, then 2, …); **clicking** a node (or legend) jumps straight to that group (`Present.pickGroup`). | A map of the inside before we open it — pick a thread to pull. |
+| **3 — The Messy Canvas (per group)** | The run plays **one group at a time**. Entering a group, **only that group's assets** appear with a **zoom-in entrance** (`scatterZoomView` — each item zooms into place; nothing from another group is in the background). The group's items are **interconnected as a graph** — thin **edges tinted by the group colour** (faint, `.world-edge` opacity ~.22). Each **NEXT** brings the next folder up as a **centered, zoomed "hero"**; earlier folders settle into that group's ordered grid (white-veiled). When a group ends, the next group zooms in. | The raw inside of the box, opened group by group. |
+| **4 — Rationalization (all assembled)** | **Two stops.** First NEXT (`RATIONALIZE ▸`): **ALL items assemble into one ordered grid** — by **group then slide**, headers **coloured per group**, **no connecting edges** — the clean grid alone. Second NEXT (`REVEAL ▸`): the punch line **emerges** over that same grid in a window (`RATIONALIZED.LOG`). | "Order where there was chaos." Everything finally in its place, then named. |
+| **5 — The Rationalizer** | A chatbot popup whose backdrop **settles into the Act-1 blue** (the `#scrim` eases to `--blue`) — everything behind is gone. Soft, floating animations: *"…now it is the AI's turn to answer — and your turn to think."* | Real AI answers, grounded in the live canvas + the source papers. Full circle to the blue. |
+
+> **Step model** (`state.js`): a built **sequence** of stops —
+> `intro · index · [per group: messy, focus×K] · grid · gridlog · chat`. The two Act-4 stops
+> (`grid`, `gridlog`) both drop the group scope so **every** item appears, ordered by group + slide;
+> `grid` shows the clean assembled grid, `gridlog` adds the emerging punch line. `Present.pickGroup(g)`
+> jumps to a group's messy stop; advancing past the last group reaches the assembled grid, then the line.
 
 A dial called **`--clean`** (0 → 1) rises a notch on every advance; anything multiplied by
 **`--chaos` (`= 1 − var(--clean)`)** — the repetitive background decor, smear washes, grain —
-fades as you go, vanishing entirely at Act 3. The heavy **glitch FX have been removed** in
-favour of a clean, calm look: the cursor is a single blue crosshair (no RGB-split / jitter),
-text is plain (no scramble or echo), windows are crisp (no ghost/blur duplicates), and there
-are no transition bursts. The page reads calm throughout and fully settles by Act 3.
+fades as you go. The heavy **glitch FX have been removed** in favour of a clean, calm look:
+the cursor is a single blue crosshair, text is plain, windows are crisp, and there are no
+transition bursts. The index (Act 2), the rationalized screen (Act 4) and the chat (Act 5)
+are decor-free white/blue calm screens.
 
-The three **dialog popups** (Act 1 intro, Act 3 `RATIONALIZED.LOG`, Act 4 chat) share a
+The three **dialog popups** (Act 1 intro, Act 4 `RATIONALIZED.LOG`, Act 5 chat) share a
 **"web window" chrome** — a nod to old Windows (Win98 navy→blue gradient title bar, beveled
 title buttons, red close-button hover) with the page's modern, light, crisp finish and a soft
-float shadow (no blue offset shadow). Scoped to those three so the Act-2 canvas item windows
+float shadow (no blue offset shadow). Scoped to those three so the Act-3 canvas item windows
 stay flat and sharp. See `.win-dialog, .chat-win, .rat-win` in `main.css`.
+
+**Element windows are uniform across all acts.** Every item window (Act 2 index, Act 3 canvas,
+Act 4 grid) wears the **same single thin black frame** — `border: 1px solid #000` on `.win`,
+`box-shadow: none`. No grey hairline, no drop shadow, and no per-state change: hover, `fresh`
+(the zoomed hero) and `dragging` all keep the identical black outline. (Only the three popup
+dialogs above keep a float shadow, by design.)
 
 ### Layering & arrangement (the two mechanics worth knowing)
 
 - **Backdrop (`#scrim`).** A blurred veil lives **inside `#stage` at `z-index: 250`** — fairly
-  **opaque white** (`rgba(255,255,255,.82)`) so the zoomed Act-2 hero pops on a near-clean field.
-  It sits *behind* the hero of the moment — the zoomed Act-2 cluster (z 520) and the **chat**
+  **opaque white** (`rgba(255,255,255,.82)`) so the zoomed Act-3 hero pops on a near-clean field.
+  It sits *behind* the hero of the moment — the zoomed Act-3 cluster (z 520) and the **chat**
   (z 600) — but *over* the messy / receding canvas (low z), which it softly veils. `#world` uses
   `z-index: auto` (not a stacking context) so items can rise above or sit below the scrim.
-  `state.js` toggles it on for the Act-2 focus steps and the chat. **At Act 4 the scrim eases to
-  the Act-1 blue** (`body[data-act="4"] #scrim { background: var(--blue) }`, with a
+  `state.js` toggles it on for the Act-3 focus steps and the chat. **At Act 5 the scrim eases to
+  the Act-1 blue** (`body[data-act="5"] #scrim { background: var(--blue) }`, with a
   `background-color` transition), so the chat sits on a calm blue screen — full circle.
-- **Centered zoom + progressive grid (Act 2).** `canvas.js` computes every item's **final grid slot
+- **Centered zoom + progressive grid (Act 3).** `canvas.js` computes every item's **final grid slot
   once** (`gridSlots()`), shared by `focus()` and `grid()`. On each NEXT the **current** folder is a
   **centered, zoomed hero** (`zoomCluster()` picks the column count that maximises the zoom, up to
   ~1.85×); **earlier** folders sit in their grid slot with a `past` class; **not-yet-reached** folders
   wait scattered in the back (below the scrim, veiled — never vanishing). `past` paints a **solid
   white overlay over the whole window** (`.item.past .win::after`, opacity ~.62) — the window stays
-  100% opaque (no transparency, nothing behind shows). Active (`:not(.past)`) windows **auto-scroll**:
-  `img/video` pan via `object-position` (`winpan`); text via JS `scrollTop` ping-pong that stops on
-  reader input. By the last folder everything is placed; **Act 3** keeps each item exactly where it is
-  (no re-settle) and adds a continuous gentle **float** (`gridfloat`, per-item random phase `--fp`),
-  while the decor fades out and `RATIONALIZED.LOG` emerges with a zoom pop (`ratpop`).
+  100% opaque (no transparency, nothing behind shows). The **zoomed hero** (the `fresh` window)
+  **auto-scrolls**: `img/video` pan via `object-position` (`winpan`); text via JS `scrollTop`. The
+  **text scroll always (re)starts from the top** each time a window becomes the hero (own per-card
+  clock, keyed off the `fresh` class), and the **descent is slow, the return up is fast** (cycle
+  fractions in `setupTextAutoScroll`); it stops the instant the reader touches that window. By the
+  last folder everything is placed; **Act 4** keeps each item exactly where it is (no re-settle) and
+  adds a continuous gentle **float** (`gridfloat`, per-item random phase `--fp`), while the decor
+  fades out and `RATIONALIZED.LOG` emerges with a zoom pop (`ratpop`) on the second Act-4 stop.
 
 ---
 
@@ -64,8 +80,16 @@ stay flat and sharp. See `.win-dialog, .chat-win, .rat-win` in `main.css`.
 The canvas is **content-driven and dynamic**. The page reads `Slides_Datasets/` live
 on every request via `/api/slides`.
 
-1. Create a folder named `NN_Title` (a **two-digit numeric prefix sets the order**),
-   e.g. `06_Concretization`.
+1. Create a folder. **Two accepted naming shapes:**
+   - **Grouped (recommended):** `gNN_MM_Title` — **group `NN`**, **slide `MM`** within that
+     group, then the name. e.g. `g01_03_Open_Machine` = group 1, slide 3, "Open Machine".
+     Slides are ordered by **group, then slide**. Each group tints its window **header a
+     different colour** (groups 1–6 are predefined in `main.css` as `--grp-1 … --grp-6`;
+     add more there to extend). A small coloured **group chip** (`G1`, `G2`, …) also shows
+     in the folder title HUD.
+   - **Legacy (ungrouped):** `NN_Title` — a two-digit numeric prefix sets the order, e.g.
+     `06_Concretization`. These keep the default blue header and sort **after** all grouped
+     folders, so you can migrate to groups gradually without breaking the narrative order.
 2. Drop files inside. Supported types:
    - **Images:** `.png .jpg .jpeg .webp .svg .avif .bmp`
    - **GIFs:** `.gif`
@@ -117,10 +141,11 @@ index.html              The single page (4 acts + HUD + nav + cursor + #scrim + 
 styles/main.css         Light editorial / Y2K-chrome design system + the --clean dial
 scripts/
   glitch.js             Clean crosshair cursor (burst()/scramble() kept as no-ops)
-  canvas.js             Fetch /api/slides → scatter → centered-zoom focus (accumulates grid) → grid + drag + auto-scroll
+  canvas.js             Fetch /api/slides → scatter / zoom-in entrance → centered-zoom focus (per-group grid) → final grid + drag + auto-scroll + group scope
+  graph.js              Act 2 "THE INDEX" — force-directed graph of all items, grouped by colour; hover isolates a group, click scopes the run
   chatbot.js            Streaming chat UI → /api/chat
   state.js              Narrative state machine; drives --clean, the #scrim and the acts
-  flood.js              Boot "window flood" — runs only as the box opens (Act 2), never during Act 1
+  flood.js              Boot "window flood" — runs only as the box opens (Act 3, step 2), never before
 api/
   slides.mjs            GET — live manifest of Slides_Datasets (scanned per request)
   chat.mjs              POST — AI answer (AI SDK + Vercel AI Gateway); context = canvas scan + PDF papers
@@ -203,17 +228,26 @@ If no key is set, the page works fully and the chatbot returns a graceful in-cha
   **Archivo Black** (display), **Anton** (status words), **Saira Condensed** (system text),
   **Courier New** (mono) — loaded via Google Fonts in `index.html`.
 - **Density vs. calm:** anything multiplied by `var(--chaos)` (`= 1 - var(--clean)`) calms as the
-  user advances; the Act-3 light theme, the gentle item **float** (`gridfloat`) and the decor fade
-  live under `body[data-act="3"]`.
+  user advances; the rationalized-act light theme, the gentle item **float** (`gridfloat`) and the
+  decor fade live under `body[data-act="4"]` (decor is also off at the index, `body[data-act="2"]`).
 - **Backdrop / layering:** `#scrim` (inside `#stage`, `z-index: 250`) is the blurred veil behind the
   zoomed images / chat — tune its whiteness via `rgba(255,255,255,.82)`. Toggled per step in
-  `state.js`, and eased to **`var(--blue)` at Act 4** so the chat lands on the Act-1 blue.
+  `state.js`, and eased to **`var(--blue)` at Act 5** so the chat lands on the Act-1 blue.
 - **Popup "web window" chrome:** `.win-dialog, .chat-win, .rat-win` in `main.css` — Win98 gradient
-  title bar, beveled buttons, red close-hover, soft float shadow. Act-2 canvas item windows use the
-  plain flat `.win` chrome instead. The chat frame is completed by a `.chat-win::after` hairline overlay.
-- **Past-slide veil (Act 2):** `.item.past .win::after` is a **solid white overlay over the whole
+  title bar, beveled buttons, red close-hover, soft float shadow. The chat frame is completed by a
+  `.chat-win::after` hairline overlay.
+- **Element window frame (all acts):** `.win` carries a single `border: 1px solid #000` and
+  `box-shadow: none`; hover / `fresh` / `dragging` / `.idx-node` states all keep that same outline
+  (no shadows, no blue rings). Change the one `.win` border to restyle every item window at once.
+- **Connection graph edges:** Act 3 `.world-edge` (and Act 2 `.idx-edge`) are tinted by group colour;
+  tune Act-3 faintness via `.world-edge { opacity: .22 }`. Edges show only on the `messy`/`focus`
+  stops — `state.js` calls `Canvas.edges(...)`, off for the Act-4 grid.
+- **Past-slide veil (Act 3):** `.item.past .win::after` is a **solid white overlay over the whole
   window** (bar + content) — tune its `opacity`. The `past`/`fresh` flags are set in `canvas.js`
-  `focus()`; the current folder is the `zoomCluster()` hero. Act-3 float: `gridfloat` + per-item `--fp`.
+  `focus()`; the current folder is the `zoomCluster()` hero. Act-4 float: `gridfloat` + per-item `--fp`.
+- **Text auto-scroll (Act 3):** `setupTextAutoScroll()` in `canvas.js` — the `fresh` hero's text
+  card always restarts from the top, descends slowly then returns up quickly. Tune the cadence via
+  `period` and the `fTopHold / fDown / fBotHold / fUp` fractions (must sum to 1).
 - **Folder label:** `.folder-title` — a small, centred, discreet label near the top (not a giant
   hero title).
 - **Chatbot persona / knowledge:** `buildSystem()` in `api/chat.mjs`.
