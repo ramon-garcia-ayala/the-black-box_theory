@@ -1,7 +1,9 @@
-/* state.js — the narrative state machine.
-   step model:  0 intro | 1 messy | 2..N+1 focus folder | N+2 rationalized | N+3 chat
-   It also turns the --clean dial up a notch on every advance, so the whole UI
-   quietly de-glitches from chaos (act 1) to order (act 4). */
+/* state.js — the narrative state machine (5 acts).
+   step model (M = folders in the current scope; M == N for the full run):
+     0 intro | 1 INDEX | 2 messy | 3..2+M focus | 3+M rationalized | 4+M chat
+   Act 2 is the INDEX graph: pressing NEXT there runs ALL groups; clicking a group node
+   (Present.pickGroup) scopes the run to that one group, which shrinks M.
+   It also turns the --clean dial up a notch on every advance, de-glitching toward calm. */
 (function () {
   const body = document.body;
   const openBtn = document.getElementById('openBtn');
@@ -12,23 +14,29 @@
   const progress = document.getElementById('progress');
   const introWin = document.getElementById('introWin');
   const scrim = document.getElementById('scrim');
-  const actCanvas = document.getElementById('act-canvas');
   const chatModal = document.getElementById('chatModal');
   const chatClose = document.getElementById('chatClose');
   const rationalize = document.getElementById('rationalize');
 
-  let N = 0;
+  let N = 0;          // total folders
+  let M = 0;          // folders in current scope (group pick) — equals N for the full run
   let step = 0;
   let total = 0;
+  let selectedGroup = null;
 
-  function recompute() { N = Canvas.count(); total = N + 3; }
+  function recompute() {
+    N = Canvas.count();
+    M = Canvas.scopeFolderCount();
+    total = M + 4;
+  }
 
   function phase(s) {
     if (s === 0) return { act: 1, name: 'THE BOX' };
-    if (s === 1) return { act: 2, name: 'THE MESSY CANVAS' };
-    if (s >= 2 && s <= N + 1) return { act: 2, name: 'RATIONALIZING' };
-    if (s === N + 2) return { act: 3, name: 'RATIONALIZED' };
-    return { act: 4, name: 'THE RATIONALIZER' };
+    if (s === 1) return { act: 2, name: 'THE INDEX' };
+    if (s === 2) return { act: 3, name: 'THE MESSY CANVAS' };
+    if (s >= 3 && s <= M + 2) return { act: 3, name: 'RATIONALIZING' };
+    if (s === M + 3) return { act: 4, name: 'RATIONALIZED' };
+    return { act: 5, name: 'THE RATIONALIZER' };
   }
 
   function setClean() {
@@ -55,25 +63,33 @@
     const p = phase(step);
     body.dataset.step = String(step);
     body.dataset.act = String(p.act);
-    actLabel.textContent = `ACT ${p.act} / 4 · ${p.name}`;
+    actLabel.textContent = `ACT ${p.act} / 5 · ${p.name}`;
     setClean();
 
     introWin.classList.toggle('hidden', step !== 0);
 
-    // white blurred backdrop behind the intro popup and the focus/zoom (white acts only;
-    // never on the black rationalization/chat acts)
-    if (scrim) scrim.classList.toggle('show', step === 0 || (step >= 2 && step <= N + 1) || step === N + 3);
+    // ACT 2 — the index graph (its own opaque white overlay)
+    if (window.IndexGraph) { if (step === 1) IndexGraph.show(); else IndexGraph.hide(); }
 
-    if (step <= 1) {
+    // white blurred backdrop behind the intro popup, the focus/zoom, and the chat
+    // (never on the index — it has its own field — nor on the messy/rationalized acts)
+    if (scrim) scrim.classList.toggle('show', step === 0 || (step >= 3 && step <= M + 2) || step === M + 4);
+
+    if (step <= 2) {
       Canvas.scatterView();
-      folderLabel.textContent = step === 0 ? 'SYS://READY' : `RAW // ${N} FOLDER${N === 1 ? '' : 'S'}`;
-    } else if (step >= 2 && step <= N + 1) {
-      const fo = step - 2;
-      Canvas.focusView(fo);
-      const s = Canvas.slides()[fo];
+      if (step === 0) folderLabel.textContent = 'SYS://READY';
+      else if (step === 1) folderLabel.textContent = `INDEX // ${N} SLIDE${N === 1 ? '' : 'S'}`;
+      else folderLabel.textContent = selectedGroup
+        ? `GROUP ${String(selectedGroup).padStart(2, '0')} // ${M} SLIDE${M === 1 ? '' : 'S'}`
+        : `RAW // ${N} FOLDER${N === 1 ? '' : 'S'}`;
+    } else if (step >= 3 && step <= M + 2) {
+      const localIdx = step - 3;
+      Canvas.focusView(localIdx);
+      const s = Canvas.scopeSlides()[localIdx];
       const idx = s ? String(s.index).padStart(2, '0') : '--';
-      folderLabel.textContent = `FOLDER ${idx} / ${N}`;
-    } else if (step === N + 2) {
+      const tag = selectedGroup ? `G${selectedGroup}·${idx}` : idx;
+      folderLabel.textContent = `FOLDER ${tag} / ${M}`;
+    } else if (step === M + 3) {
       Canvas.gridView();
       folderLabel.textContent = 'ORDER // COMPLETE';
     } else {
@@ -81,10 +97,10 @@
       folderLabel.textContent = 'AWAITING_INPUT';
     }
 
-    rationalize.classList.toggle('show', step === N + 2);
-    rationalize.setAttribute('aria-hidden', step === N + 2 ? 'false' : 'true');
+    rationalize.classList.toggle('show', step === M + 3);
+    rationalize.setAttribute('aria-hidden', step === M + 3 ? 'false' : 'true');
 
-    const chatOpen = step === N + 3;
+    const chatOpen = step === M + 4;
     if (chatModal) {
       chatModal.classList.toggle('show', chatOpen);
       chatModal.setAttribute('aria-hidden', chatOpen ? 'false' : 'true');
@@ -95,17 +111,44 @@
     nextBtn.disabled = step >= total;
     nextBtn.textContent =
       step >= total ? 'END'
-        : step === N + 1 ? 'RATIONALIZE ▸'
-          : step === N + 2 ? 'ASK ▸'
-            : 'NEXT ▸';
+        : step === 1 ? 'ALL GROUPS ▸'
+          : step === M + 2 ? 'RATIONALIZE ▸'
+            : step === M + 3 ? 'ASK ▸'
+              : 'NEXT ▸';
 
     paintProgress();
     if (window.Glitch && Glitch.burst) Glitch.burst();
   }
 
-  function go(s) { step = Math.max(0, Math.min(total, s)); apply(); }
+  // Stepping back to the intro/index clears any group scope so the full set returns.
+  function clearScopeIfBackToTop(s) {
+    if (s <= 1 && selectedGroup != null) {
+      selectedGroup = null;
+      Canvas.setScope(null);
+      recompute();
+      buildProgress();
+    }
+  }
+
+  function go(s) {
+    s = Math.max(0, Math.min(total, s));
+    clearScopeIfBackToTop(s);
+    step = Math.max(0, Math.min(total, s));
+    apply();
+  }
   function next() { if (step < total) go(step + 1); }
   function prev() { if (step > 0) go(step - 1); }
+
+  // Called from the index graph: scope the whole run to one group and dive straight in.
+  function pickGroup(g) {
+    selectedGroup = (g == null ? null : Number(g));
+    Canvas.setScope(selectedGroup);
+    recompute();
+    buildProgress();
+    step = 2;            // straight into that group's messy canvas
+    apply();
+  }
+  window.Present = { pickGroup, next, prev };
 
   if (openBtn) openBtn.addEventListener('click', next);
   nextBtn.addEventListener('click', next);
@@ -121,7 +164,7 @@
   let rsz;
   window.addEventListener('resize', () => {
     clearTimeout(rsz);
-    rsz = setTimeout(() => { if (step >= 1) apply(); }, 180);
+    rsz = setTimeout(() => { if (step >= 2) apply(); }, 180);
   });
 
   function boot() {

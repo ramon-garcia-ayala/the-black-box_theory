@@ -8,6 +8,7 @@
   const world = document.getElementById('world');
   const loadState = document.getElementById('loadState');
   const folderTitle = document.getElementById('folderTitle');
+  const ftGrp = folderTitle && folderTitle.querySelector('.ft-grp');
   const ftIdx = folderTitle && folderTitle.querySelector('.ft-idx');
   const ftName = folderTitle && folderTitle.querySelector('.ft-name');
 
@@ -15,6 +16,7 @@
   let nodes = [];
   let W = 0;
   let H = 0;
+  let scopeGroup = null;          // null = all groups (full run); else present only this group
 
   /* ---------- helpers ---------- */
   function rng(seed) {
@@ -76,6 +78,7 @@
   function makeItem(node, item) {
     const fig = document.createElement('figure');
     fig.className = `item type-${item.type} glitchy`;
+    if (node.group) fig.dataset.group = node.group;   // group → header colour (see main.css)
     fig.style.width = node.w + 'px';
     fig.style.height = node.h + 'px';
     fig.style.setProperty('--fp', Math.random().toFixed(3));   // random float phase (Act 3 drift)
@@ -134,7 +137,7 @@
     slides.forEach((s, fi) => {
       (s.items || []).forEach((item, ii) => {
         const sz = sizeFor(item.type, gi);
-        const node = { type: item.type, folder: fi, ii, gi: gi++, w: sz.w, h: sz.h, x: 0, y: 0, sx: 0, sy: 0, rot: 0, scale: 1, z: 1, op: 1, blur: 0, glitchy: true, delay: 0 };
+        const node = { type: item.type, group: s.group || 0, folder: fi, ii, gi: gi++, w: sz.w, h: sz.h, x: 0, y: 0, sx: 0, sy: 0, rot: 0, scale: 1, z: 1, op: 1, blur: 0, glitchy: true, delay: 0 };
         makeItem(node, item);
         nodes.push(node);
       });
@@ -187,10 +190,21 @@
     requestAnimationFrame(frame);
   }
 
+  /* ---------- group scope (the INDEX act presents one chosen group) ---------- */
+  function inScope(n) { return scopeGroup == null || (n.group || 0) === scopeGroup; }
+  // folder indices that belong to the current scope, in narrative order
+  function scopedFolderList() {
+    const seen = new Set(); const out = [];
+    nodes.forEach((n) => { if (inScope(n) && !seen.has(n.folder)) { seen.add(n.folder); out.push(n.folder); } });
+    return out;
+  }
+
   /* ---------- layouts (all upright: rot = 0) ---------- */
   function scatter() {
     const r = rng(20240131);
     nodes.forEach((n) => {
+      if (!inScope(n)) { n.hidden = true; n.op = 0; n.glitchy = false; return; }
+      n.hidden = false;
       const padX = n.w * 0.5 + 8;
       const padY = n.h * 0.5 + 8;
       n.x = n.sx = padX + r() * Math.max(1, W - padX * 2);
@@ -205,9 +219,10 @@
   // Compute each node's FINAL grid slot (gx, gy, gs). Used by both the progressive
   // focus() and the final grid() so items never jump — once placed they keep the slot.
   function gridSlots() {
-    const ordered = nodes.slice().sort((a, b) => a.folder - b.folder || a.ii - b.ii);
+    const pool = nodes.filter(inScope);
+    const ordered = pool.slice().sort((a, b) => a.folder - b.folder || a.ii - b.ii);
     const m = ordered.length || 1;
-    const baseW = (nodes[0] && nodes[0].w) || 236;
+    const baseW = (pool[0] && pool[0].w) || 236;
     const gapX = 16;
     const gapY = 16;
     const cols = Math.max(1, Math.min(m, Math.round(Math.sqrt(m * (W / Math.max(1, H)) * 1.15))));
@@ -271,16 +286,23 @@
   // Progressive arrangement: the CURRENT folder is a centered zoom (hero); folders already
   // passed settle into their final ordered-grid slot and STAY there; folders not yet
   // reached wait scattered in the back canvas (below the white scrim — softly veiled).
-  function focus(fo) {
+  // localIdx indexes into the in-scope folder list (so a group runs 0..M-1 on its own).
+  function focus(localIdx) {
     gridSlots();
-    zoomCluster(nodes.filter((n) => n.folder === fo));
+    const folders = scopedFolderList();
+    const fo = folders[localIdx];
+    const posOf = new Map(folders.map((f, i) => [f, i]));
+    zoomCluster(nodes.filter((n) => inScope(n) && n.folder === fo));
     nodes.forEach((n) => {
+      if (!inScope(n)) { n.hidden = true; n.op = 0; n.glitchy = false; n.fresh = false; n.past = false; return; }
+      n.hidden = false;
+      const pos = posOf.get(n.folder);
       if (n.folder === fo) {
         // current: centered zoom (position/scale set above) — only flags here
         n.rot = 0; n.blur = 0; n.op = 1;
         n.past = false; n.fresh = true;       // sharp, highlighted hero
         n.z = 520; n.glitchy = false; n.delay = 0.05;
-      } else if (n.folder < fo) {
+      } else if (pos < localIdx) {
         n.x = n.gx; n.y = n.gy; n.scale = n.gs;   // earlier folders settle into the ordered grid
         n.rot = 0; n.blur = 0; n.op = 1;
         n.past = true; n.fresh = false;       // white-veiled "previous slide" (still opaque)
@@ -298,6 +320,8 @@
   function grid() {
     gridSlots();
     nodes.forEach((n) => {
+      if (!inScope(n)) { n.hidden = true; n.op = 0; n.glitchy = false; n.fresh = false; n.past = false; return; }
+      n.hidden = false;
       n.x = n.gx; n.y = n.gy; n.scale = n.gs;
       n.rot = 0; n.op = 1; n.blur = 0; n.z = 10; n.glitchy = false; n.fresh = false; n.past = false;
       n.delay = n.gdelay;
@@ -317,6 +341,7 @@
       el.classList.toggle('glitchy', !!n.glitchy);
       el.classList.toggle('fresh', !!n.fresh);
       el.classList.toggle('past', !!n.past);
+      el.classList.toggle('scoped-out', !!n.hidden);
       el.style.transform = `translate(${n.x}px, ${n.y}px) translate(-50%, -50%) scale(${n.scale})`;
       n.delay = 0;
     });
@@ -326,6 +351,10 @@
   function showFolderTitle(fo) {
     const s = slides[fo];
     if (!folderTitle || !s) return;
+    if (ftGrp) {
+      if (s.group) { ftGrp.textContent = 'G' + s.group; folderTitle.dataset.group = s.group; }
+      else { ftGrp.textContent = ''; folderTitle.removeAttribute('data-group'); }
+    }
     ftIdx.textContent = String(s.index).padStart(2, '0');
     ftName.textContent = (s.name || s.folder || '').toUpperCase();
     folderTitle.classList.add('show');
@@ -378,8 +407,18 @@
     load,
     count: () => slides.length,
     slides: () => slides,
+    // group scoping (driven by the INDEX act)
+    setScope(g) { scopeGroup = (g == null ? null : Number(g)); },
+    scope: () => scopeGroup,
+    scopeFolderCount() { return scopedFolderList().length; },
+    scopeSlides() { return scopedFolderList().map((fi) => slides[fi]).filter(Boolean); },
+    groupsPresent() {
+      const seen = new Set(); const out = [];
+      slides.forEach((s) => { const g = s.group || 0; if (!seen.has(g)) { seen.add(g); out.push(g); } });
+      return out;
+    },
     scatterView() { measure(); scatter(); render(); hideFolderTitle(); },
-    focusView(fo) { measure(); focus(fo); render(); },
+    focusView(localIdx) { measure(); focus(localIdx); render(); },
     gridView() { measure(); grid(); render(); }
   };
 })();

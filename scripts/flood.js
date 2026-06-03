@@ -80,13 +80,13 @@
   }
   function clear() { stopped = true; host.classList.add('gone'); }
 
-  // Drive purely off the narrative step: run the flood as the box opens (entering
-  // Act 2, step 1) and clear it the moment we advance into the first focus (step 2+).
+  // Drive purely off the narrative step: run the flood as the box opens (entering the
+  // messy canvas, step 2 — after intro + index) and clear it once we advance into focus.
   const body = document.body;
   function onStep() {
     const s = body.dataset.step;
-    if (s === '1') start();          // box just opened → run the boot flood once
-    else if (started) clear();        // advanced on, or stepped back to Act 1 → stop it
+    if (s === '2') start();          // box just opened → run the boot flood once
+    else if (started) clear();        // advanced on, or stepped back → stop it
   }
   new MutationObserver(onStep).observe(body, { attributes: true, attributeFilter: ['data-step'] });
   onStep();

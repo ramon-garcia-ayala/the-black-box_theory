@@ -174,6 +174,7 @@
       </div>
 
       <div id="folderTitle" class="folder-title" aria-hidden="true">
+        <span class="ft-grp"></span>
         <span class="ft-idx">01</span>
         <span class="ft-name">INTRO</span>
       </div>
@@ -193,7 +194,20 @@
       </div>
     </section>
 
-    <!-- ACT 4 — CHATBOT -->
+    <!-- ACT 2 — THE INDEX (force-directed graph of every item, grouped by colour) -->
+    <section id="act-index" class="act-index" aria-hidden="true">
+      <svg id="idxEdges" class="idx-edges" aria-hidden="true"></svg>
+      <div id="idxNodes" class="idx-nodes"></div>
+      <div class="idx-ui">
+        <div class="idx-head">
+          <span class="idx-kicker">THE INDEX</span>
+          <span class="idx-hint">Hover to isolate a group · click to enter it · scroll to zoom · right-drag to pan</span>
+        </div>
+        <div id="idxLegend" class="idx-legend"></div>
+      </div>
+    </section>
+
+    <!-- ACT 5 — CHATBOT -->
     <div id="chatModal" class="chat-modal" aria-hidden="true">
       <div class="win chat-win" role="dialog" aria-label="Ask the Black Box">
         <div class="winbar winbar-chat">
@@ -229,6 +243,7 @@
   <script src="slides-data.js" onerror="window.__noSnapshot=true"></script>
   <script src="scripts/glitch.js" defer></script>
   <script src="scripts/canvas.js" defer></script>
+  <script src="scripts/graph.js" defer></script>
   <script src="scripts/chatbot.js" defer></script>
   <script src="scripts/state.js" defer></script>
   <script src="scripts/flood.js" defer></script>
