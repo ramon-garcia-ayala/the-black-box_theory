@@ -15,6 +15,7 @@
   const folderLabel = document.getElementById('folderLabel');
   const progress = document.getElementById('progress');
   const introWin = document.getElementById('introWin');
+  const teamWin = document.getElementById('teamWin');
   const scrim = document.getElementById('scrim');
   const chatModal = document.getElementById('chatModal');
   const chatClose = document.getElementById('chatClose');
@@ -36,6 +37,7 @@
     N = Canvas.count();
     seq = [];
     seq.push({ act: 1, name: 'THE BOX', kind: 'intro' });
+    seq.push({ act: 1, name: 'THE TEAM', kind: 'team' });
     seq.push({ act: 2, name: 'THE INDEX', kind: 'index' });
     Canvas.groupsPresent().forEach((g) => {
       const folders = foldersOfGroup(g);
@@ -80,6 +82,10 @@
     setClean();
 
     introWin.classList.toggle('hidden', p.kind !== 'intro');
+    if (teamWin) {
+      teamWin.classList.toggle('hidden', p.kind !== 'team');
+      teamWin.setAttribute('aria-hidden', p.kind === 'team' ? 'false' : 'true');
+    }
     if (window.IndexGraph) { if (p.kind === 'index') IndexGraph.show(); else IndexGraph.hide(); }
     // the group-coloured canvas graph shows only while a group is being opened (messy / focus);
     // the Act-4 ordered grid is clean — no connecting lines.
@@ -91,6 +97,9 @@
     if (p.kind === 'intro') {
       Canvas.setScope(null); Canvas.scatterView();
       folderLabel.textContent = 'SYS://READY';
+    } else if (p.kind === 'team') {
+      Canvas.setScope(null); Canvas.scatterView();
+      folderLabel.textContent = 'TEAM // 04';
     } else if (p.kind === 'index') {
       Canvas.setScope(null);
       folderLabel.textContent = `INDEX // ${N} SLIDE${N === 1 ? '' : 'S'}`;
