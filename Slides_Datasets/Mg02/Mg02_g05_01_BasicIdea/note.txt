@@ -1,0 +1,6 @@
+Simondon noticed that when engineers try to make a machine "perfect"
+ — fully automated, self-contained, optimized for one task
+ — something strange happens. 
+The machine becomes less technically sophisticated, not more. 
+A robot that does exactly one thing, flawlessly, has no room left inside it. 
+It is closed.
