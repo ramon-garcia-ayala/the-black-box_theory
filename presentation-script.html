@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inside the Black Box — Presentation Script</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Georgia', serif;
+    font-size: 12pt;
+    color: #111;
+    background: #fff;
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 40px 48px;
+    line-height: 1.7;
+  }
+
+  /* ─── Cover ─── */
+  .cover {
+    text-align: center;
+    padding: 60px 0 80px;
+    border-bottom: 2px solid #111;
+    margin-bottom: 60px;
+  }
+  .cover h1 {
+    font-size: 26pt;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .cover .subtitle {
+    font-size: 13pt;
+    font-style: italic;
+    color: #444;
+    margin-bottom: 28px;
+  }
+  .cover .meta {
+    font-size: 10pt;
+    color: #666;
+    font-family: 'Courier New', monospace;
+  }
+
+  /* ─── Speaker section ─── */
+  .speaker-section {
+    margin-bottom: 64px;
+    page-break-before: always;
+  }
+  .speaker-section:first-of-type { page-break-before: avoid; }
+
+  .speaker-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    border-bottom: 3px solid currentColor;
+    padding-bottom: 8px;
+    margin-bottom: 32px;
+  }
+  .speaker-header .mg-tag {
+    font-family: 'Courier New', monospace;
+    font-size: 9pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    padding: 3px 8px;
+    border: 2px solid currentColor;
+    white-space: nowrap;
+  }
+  .speaker-header h2 {
+    font-size: 20pt;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+
+  /* Per-speaker colours */
+  .mg01 { color: #0a30ff; }
+  .mg02 { color: #c0390a; }
+  .mg03 { color: #1a8a3a; }
+  .mg04 { color: #7a1a8a; }
+
+  /* ─── Chapter ─── */
+  .chapter {
+    margin-bottom: 28px;
+  }
+  .chapter-label {
+    font-family: 'Courier New', monospace;
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: .15em;
+    color: #888;
+    margin-bottom: 6px;
+  }
+
+  /* ─── Slide ─── */
+  .slide {
+    margin-bottom: 20px;
+    padding-left: 20px;
+    border-left: 3px solid #ddd;
+    position: relative;
+  }
+  .slide-number {
+    font-family: 'Courier New', monospace;
+    font-size: 8pt;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    margin-bottom: 4px;
+  }
+  .slide-folder {
+    font-family: 'Courier New', monospace;
+    font-size: 7.5pt;
+    color: #bbb;
+    margin-bottom: 6px;
+    font-style: italic;
+  }
+  .slide-text {
+    font-size: 11pt;
+    line-height: 1.75;
+    color: #222;
+    white-space: pre-wrap;
+  }
+
+  /* Pop-up / question highlight */
+  .slide.popup {
+    border-left-color: currentColor;
+    background: #f8f8f8;
+    padding: 14px 16px 14px 20px;
+  }
+  .slide.popup .slide-text {
+    font-weight: bold;
+    font-size: 12pt;
+    font-style: italic;
+  }
+
+  /* ─── Print ─── */
+  @media print {
+    body { padding: 20px 32px; }
+    .cover { padding: 40px 0 60px; }
+    .speaker-section { page-break-before: always; }
+    .speaker-section:first-of-type { page-break-before: avoid; }
+    .slide { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════ COVER -->
+<div class="cover">
+  <h1>Inside the Black Box</h1>
+  <div class="subtitle">Simondon's Politics of Technology — Presentation Script</div>
+  <div class="meta">
+    After Henning Schmidgen, "Inside the Black Box," <em>SubStance</em> 41/3 (2012)<br>
+    IAAC · AIA 2026 · 30 June 2026
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════ MG01 — RANA -->
+<div class="speaker-section">
+  <div class="speaker-header mg01">
+    <span class="mg-tag">Mg01</span>
+    <h2>Rana</h2>
+  </div>
+
+  <!-- Chapter g01 -->
+  <div class="chapter">
+    <div class="chapter-label">Chapter 1 — g01 · The Black Box</div>
+
+    <div class="slide mg01">
+      <div class="slide-number">Slide 1 · Mg01_g01_01</div>
+      <div class="slide-folder">intro.txt</div>
+      <div class="slide-text">In his essay on Du mode d'existence des objets techniques (1958),
+Schmidgen traces Simondon's thinking through three distinct movements.
+This results in an intellectual journey that resonates remarkably well
+with the current relationship between AI and architecture.
+
+When discussing machines, or technical objects, as Simondon calls them,
+we often ask: What do we want from machines?
+Today, the same question is repeatedly posed to AI.
+
+Yet a more fundamental question is rarely considered:</div>
+    </div>
+
+    <div class="slide popup mg01">
+      <div class="slide-number">Slide 2 · Mg01_g01_02</div>
+      <div class="slide-folder">pop_up.txt</div>
+      <div class="slide-text">What does the machine want?</div>
+    </div>
+
+    <div class="slide mg01">
+      <div class="slide-number">Slide 3 · Mg01_g01_03</div>
+      <div class="slide-folder">explicacion.txt</div>
+      <div class="slide-text">Before answering that question, let us first look at these
+technical objects that surround us every day.
+
+A watch.
+A radio.
+A light bulb.
+A camera.
+Even the electric toothbrush you used this morning.
+
+Take a moment to consider them.
+
+They are so familiar that we rarely notice them anymore.
+Now, looking at these objects, ask yourself:</div>
+    </div>
+
+    <div class="slide popup mg01">
+      <div class="slide-number">Slide 4 · Mg01_g01_04</div>
+      <div class="slide-folder">pop_up.txt</div>
+      <div class="slide-text">Do you actually want to understand these objects?
+
+Or do you simply ignore them, taking them for granted as long as they continue to function?</div>
+    </div>
+  </div>
+
+  <!-- Chapter g02 -->
+  <div class="chapter">
+    <div class="chapter-label">Chapter 2 — g02 · Ignorance &amp; Worship</div>
+
+    <div class="slide mg01">
+      <div class="slide-number">Slide 1 · Mg01_g02_01</div>
+      <div class="slide-folder">intro.txt</div>
+      <div class="slide-text">In a state of ignorance, technical objects appear to us as black boxes.
+
+We do not understand their internal processes, their logic, or their evolution.
+We simply see the input and the output — they seem almost magical,
+quietly producing exactly the result we need.
+
+Simondon does not simply describe this as a lack of knowledge.
+This ignorance, or avoidance, can actually be seen through two different ways.
+
+Let's look into those images:</div>
+    </div>
+
+    <div class="slide mg01">
+      <div class="slide-number">Slide 2 · Mg01_g02_02</div>
+      <div class="slide-folder">intro.txt</div>
+      <div class="slide-text">What do you see?
+By Barthes, the Citroën seems as a Goddess.
+
+Respected, worshipped, almost sacred.
+
+Other examples include the last iPhone release, or most recently the AP × Swatch collaboration.</div>
+    </div>
+
+    <div class="slide mg01">
+      <div class="slide-number">Slide 3 · Mg01_g02_03</div>
+      <div class="slide-folder">intro.txt</div>
+      <div class="slide-text">And now let's look at this.
+
+In the case of AI, data centers and computational infrastructure
+are often kept far from view, almost invisible to the people who use them every day.
+
+This is where Simondon identifies two opposite yet closely related ways
+of avoiding a genuine understanding of technical objects.
+
+We either ignore them completely, treating them as black boxes
+whose inner workings do not concern us.
+
+Or we elevate them to something almost mythical,
+attributing to them powers they do not actually possess.
+
+In both cases, the result is the same: we fail to understand the machine itself.
+We either dismiss it or worship it, but rarely do we engage with it.
+
+Which brings us to our next revelation.</div>
+    </div>
+
+    <div class="slide mg01">
+      <div class="slide-number">Slide 4 · Mg01_g02_04</div>
+      <div class="slide-folder">intro.txt</div>
+      <div class="slide-text">It is not humanity that has become enslaved to machines.
+
+The machines have been reduced to the status of servants —
+subordinated entirely to human needs and desires,
+
+as we continue being completely indifferent to what they are.</div>
+    </div>
+  </div>
+
+  <!-- Chapter g03 -->
+  <div class="chapter">
+    <div class="chapter-label">Chapter 3 — g03 · Opening the Box</div>
+
+    <div class="slide mg01">
+      <div class="slide-number">Slide 1 · Mg01_g03_01</div>
+      <div class="slide-folder">intro.txt</div>
+      <div class="slide-text">To understand this, let's bring it to an example.
+
+As we have del Campo with us today, let's bring it to AI.
+
+Let's take a look at the Robot Garden —
+an outdoor garden at the University of Michigan's Robotics building, inaugurated in 2021.
+
+It is revolutionary because the design of the ground and the textures of the garden
+were not designed by an architect sitting with a mouse.
+
+What they did was take satellite images of the terrain, train a neural network
+with thousands of images of architectural elements,
+and then let the network dream those elements onto the image of the site.</div>
+    </div>
+
+    <div class="slide mg01">
+      <div class="slide-number">Slide 2 · Mg01_g03_02</div>
+      <div class="slide-folder">intro.txt</div>
+      <div class="slide-text">When AI designs a building, something weird and interesting happens —
+and it is too weird and interesting to simply dismiss.
+
+The result is a landscape that looks natural but has a strange artificiality.
+The forms are not what a human would have chosen.
+They are what a machine saw when it tried to see architecture in an empty terrain.
+
+Which leads us to our next chapter:</div>
+    </div>
+
+    <div class="slide popup mg01">
+      <div class="slide-number">Slide 3 · Mg01_g03_03</div>
+      <div class="slide-folder">intro.txt</div>
+      <div class="slide-text">What if we open the black box?</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════ MG02 — EDUARDO -->
+<div class="speaker-section">
+  <div class="speaker-header mg02">
+    <span class="mg-tag">Mg02</span>
+    <h2>Eduardo</h2>
+  </div>
+
+  <!-- Chapter g03 -->
+  <div class="chapter">
+    <div class="chapter-label">Chapter 3 — g03 · Concrétisation</div>
+
+    <div class="slide mg02">
+      <div class="slide-number">Slide 3 · Mg02_g03_03</div>
+      <div class="slide-folder">note.txt</div>
+      <div class="slide-text">So what does Simondon do when he faces the machine?
+
+He does not theorize.
+He does not worship.
+He does not ignore.
+HE OPENS IT.
+
+This is what he called — CONCRÉTISATION.</div>
+    </div>
+  </div>
+
+  <!-- Chapter g05 -->
+  <div class="chapter">
+    <div class="chapter-label">Chapter 5 — g05 · Margin of Indetermination</div>
+
+    <div class="slide mg02">
+      <div class="slide-number">Slide 1 · Mg02_g05_01</div>
+      <div class="slide-folder">note.txt</div>
+      <div class="slide-text">Simondon noticed that when engineers try to make a machine "perfect" —
+fully automated, self-contained, optimized for one task —
+something strange happens.
+The machine becomes less technically sophisticated, not more.
+A robot that does exactly one thing, flawlessly, has no room left inside it.
+It is closed.</div>
+    </div>
+
+    <div class="slide mg02">
+      <div class="slide-number">Slide 2 · Mg02_g05_02</div>
+      <div class="slide-folder">note.txt</div>
+      <div class="slide-text">The machines Simondon considered truly advanced were the ones that had
+a kind of deliberate incompleteness built in — gaps where the world could enter,
+where a human could intervene, where the machine could couple with other machines
+or respond to changing conditions.
+
+He called this gap the margin of indetermination.</div>
+    </div>
+
+    <div class="slide mg02">
+      <div class="slide-number">Slide 3 · Mg02_g05_03</div>
+      <div class="slide-folder">note.txt</div>
+      <div class="slide-text">The margin of indetermination here is in the tool itself.
+The planer is not fully determining what happens.
+It leaves room for the material to speak, for the worker to respond.
+The tool is in dialogue with the wood and with the human simultaneously.
+That is where the skill lives —
+not in the tool,
+not in the hand,
+but in the space between them.</div>
+    </div>
+
+    <div class="slide popup mg02">
+      <div class="slide-number">Slide 4 · Mg02_g05_04</div>
+      <div class="slide-folder">note.txt</div>
+      <div class="slide-text">The planer doesn't decide what the wood will become.
+It holds open a question.
+And this is exactly where we arrive at one of the most uncomfortable questions in the room right now —
+Can a machine hold open a question of its own?
+Not just respond to the material.
+Not just transmit signals back to the hand.
+But actually reach into a space that wasn't there before
+and pull something out of it that nobody put in.
+
+In other words:
+
+Can AI be creative? Can something truly new emerge from a dataset of existing designs?</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════ MG03 — ANDREA -->
+<div class="speaker-section">
+  <div class="speaker-header mg03">
+    <span class="mg-tag">Mg03</span>
+    <h2>Andrea</h2>
+  </div>
+
+  <!-- Chapter g01 -->
+  <div class="chapter">
+    <div class="chapter-label">Chapter 1 — g01 · Creative AI</div>
+
+    <div class="slide popup mg03">
+      <div class="slide-number">Slide 1 · Mg03_g01_01</div>
+      <div class="slide-folder">Creative_AI.txt</div>
+      <div class="slide-text">Can AI be creative?
+Can AI create something new?</div>
+    </div>
+
+    <div class="slide mg03">
+      <div class="slide-number">Slide 2 · Mg03_g01_02</div>
+      <div class="slide-folder">Generative_AI.txt</div>
+      <div class="slide-text">Visually IMPRESSIVE, but also really READABLE</div>
+    </div>
+  </div>
+
+  <!-- Chapter g02 -->
+  <div class="chapter">
+    <div class="chapter-label">Chapter 2 — g02 · Creativity</div>
+
+    <div class="slide popup mg03">
+      <div class="slide-number">Slide 1 · Mg03_g02_01</div>
+      <div class="slide-folder">Creativity.txt</div>
+      <div class="slide-text">What creativity is?</div>
+    </div>
+
+    <div class="slide mg03">
+      <div class="slide-number">Slide 2 · Mg03_g02_02</div>
+      <div class="slide-folder">3_types_of_Creativity.txt</div>
+      <div class="slide-text">3 TYPES OF CREATIVITY
+
+1. COMBINATIONAL CREATIVITY
+   Combining existing ideas in improbable ways.
+
+2. EXPLORATORY CREATIVITY
+   Navigating the boundaries of structured conceptual spaces.
+
+3. TRANSFORMATIONAL CREATIVITY
+   Changing the rules of the space itself.</div>
+    </div>
+  </div>
+
+  <!-- Chapter g03 -->
+  <div class="chapter">
+    <div class="chapter-label">Chapter 3 — g03 · Estrangement &amp; Defamiliarization</div>
+
+    <div class="slide mg03">
+      <div class="slide-number">Slide 1 · Mg03_g03_01</div>
+      <div class="slide-folder">Estrangement &amp; Defamiliarization.txt</div>
+      <div class="slide-text">The Estrangement &amp; Defamiliarization effect</div>
+    </div>
+
+    <div class="slide mg03">
+      <div class="slide-number">Slide 2 · Mg03_g03_02</div>
+      <div class="slide-folder">Estrangement_Intro.txt</div>
+      <div class="slide-text">ESTRANGEMENT &amp; DEFAMILIARIZATION
+
+The uncanny as a mental activator — from Viktor Shklovsky to Bertolt Brecht</div>
+    </div>
+
+    <div class="slide mg03">
+      <div class="slide-number">Slide 3 · Mg03_g03_03</div>
+      <div class="slide-folder">Estrangement.txt</div>
+      <div class="slide-text">ESTRANGEMENT IN ARCHITECTURE
+
+Estrangement as an opportunity to provoke and install emancipating alternatives</div>
+    </div>
+  </div>
+
+  <!-- Chapter g04 -->
+  <div class="chapter">
+    <div class="chapter-label">Chapter 4 — g04 · Deep House Method</div>
+
+    <div class="slide mg03">
+      <div class="slide-number">Slide 1 · Mg03_g04_01</div>
+      <div class="slide-folder">A_neuroscientist_looking_for.txt</div>
+      <div class="slide-text">SOMETHING DIFFERENT — NOT NEW</div>
+    </div>
+
+    <div class="slide mg03">
+      <div class="slide-number">Slide 2 · Mg03_g04_02</div>
+      <div class="slide-folder">The_Goal.txt</div>
+      <div class="slide-text">STYLEGAN 2 ALGORITHM ON TWO DISTINCT DATASETS:
+
+— a modern facade dataset
+— a plan dataset
+
+The GOAL of the deep learning process was to intentionally achieve OVERFITTING
+or data scarcity to create the estrangement.</div>
+    </div>
+
+    <div class="slide mg03">
+      <div class="slide-number">Slide 3 · Mg03_g04_03</div>
+      <div class="slide-folder">The_Results.txt</div>
+      <div class="slide-text">THE RESULT
+
+The use of estrangement as a method to emancipate the design of a house
+from a canonical approach.
+
+Something different.
+Something strange, but familiar enough.</div>
+    </div>
+
+    <div class="slide mg03">
+      <div class="slide-number">Slide 5 · Mg03_g04_05</div>
+      <div class="slide-folder">Become_the_Conductor.txt</div>
+      <div class="slide-text">The AI-generated result is strange because it has its own interior logic
+you haven't fully opened.
+
+Simondon would say: open it.
+Find the margin of indetermination.
+Don't just receive the output —
+
+become the conductor.</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════ MG04 — RAMON -->
+<div class="speaker-section">
+  <div class="speaker-header mg04">
+    <span class="mg-tag">Mg04</span>
+    <h2>Ramon</h2>
+  </div>
+
+  <!-- Chapter g01 -->
+  <div class="chapter">
+    <div class="chapter-label">Chapter 1 — g01 · The Conductor</div>
+
+    <div class="slide mg04">
+      <div class="slide-number">Slide 1 · Mg04_g01_01</div>
+      <div class="slide-folder">note.txt</div>
+      <div class="slide-text">THE CONDUCTOR
+
+Matias del Campo is not an artist who uses AI as a brush.
+He is a conductor.
+
+The AI is not the instrument.
+The instrument is the whole relationship.</div>
+    </div>
+
+    <div class="slide popup mg04">
+      <div class="slide-number">Slide 2 · Mg04_g01_02</div>
+      <div class="slide-folder">note.txt</div>
+      <div class="slide-text">"Far from being the supervisor of a squad of slaves,
+man is the permanent organizer of a society of technical objects
+which need him as much as musicians in an orchestra need a conductor."
+
+— Gilbert Simondon</div>
+    </div>
+  </div>
+
+  <!-- Chapter g02 -->
+  <div class="chapter">
+    <div class="chapter-label">Chapter 2 — g02 · The Conductor Listens</div>
+
+    <div class="slide mg04">
+      <div class="slide-number">Slide 2 · Mg04_g02_02</div>
+      <div class="slide-folder">note.txt</div>
+      <div class="slide-text">THE CONDUCTOR DOES NOT DOMINATE. THE CONDUCTOR LISTENS.
+
+For Simondon, the good technician is not the master of a squad of slaves.
+He keeps each machine's margin of indetermination open — attending,
+adjusting, interpreting, never fully automating.
+
+To conduct is to listen: to hold the ensemble together
+without silencing any of its voices.</div>
+    </div>
+  </div>
+
+  <!-- Chapter g03 -->
+  <div class="chapter">
+    <div class="chapter-label">Chapter 3 — g03 · Situated Inference</div>
+
+    <div class="slide mg04">
+      <div class="slide-number">Slide 1 · Mg04_g03_01</div>
+      <div class="slide-folder">note.txt</div>
+      <div class="slide-text">DESIGN AS SITUATED INFERENCE
+
+In del Campo's "Intersections" paper, creativity is not a metaphysical spark
+but an INFERENTIAL process — ideation, evaluation, and contextual negotiation
+distributed across human, machine, and material.
+
+The architect becomes a MEDIATOR:
+selecting, interpreting, and translating the model's statistical relations
+into cultural and spatial propositions.</div>
+    </div>
+  </div>
+
+  <!-- Chapter g04 -->
+  <div class="chapter">
+    <div class="chapter-label">Chapter 4 — g04 · Closing</div>
+
+    <div class="slide mg04">
+      <div class="slide-number">Slide 1 · Mg04_g04_01</div>
+      <div class="slide-folder">note.txt</div>
+      <div class="slide-text">A SEAT FOR THE TECHNICAL OBJECT
+
+Simondon called for representatives of technical beings —
+a voice for machines within human culture.
+
+Someone has to speak for the orchestra.</div>
+    </div>
+
+    <div class="slide mg04">
+      <div class="slide-number">Slide 2 · Mg04_g04_02</div>
+      <div class="slide-folder">note.txt</div>
+      <div class="slide-text">MATIAS DEL CAMPO HAS BEEN DOING EXACTLY THAT
+
+In the room with us, he has spent his career advocating
+for the cultural significance of AI as a design entity —
+not a tool to be supervised, but a participant to be conducted.</div>
+    </div>
+
+    <div class="slide popup mg04">
+      <div class="slide-number">Slide 3 · Mg04_g04_03</div>
+      <div class="slide-folder">note.txt</div>
+      <div class="slide-text">THE BLACK BOX WILL KEEP SCRAMBLING THE DATA.
+
+The question was never whether the machine can create.
+It is whether we can still conduct.</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
